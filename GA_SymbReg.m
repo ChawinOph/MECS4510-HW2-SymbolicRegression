@@ -9,7 +9,7 @@ classdef GA_SymbReg < handle
         filename            % file name of the given set of points
         points              % 1000 x 2 set of f(x) = x points from the text file
         down_sample_no = 1  % no. of skipped x points (use every other down_sample_no points)
-        max_heap_size       % maximum number of heap levels
+        max_heap_level      % maximum number of heap levels
         n_pop               % number of population
         pool                % n_bit x n_pop array of current chormosomes
         p_c                 % cross over prob (single crossover)
@@ -56,10 +56,15 @@ classdef GA_SymbReg < handle
         
         function contructHeaps(this)
             % Randomly create the operator part
-            m = zeros(this.max_heap_size, this.n_pop);
-            m(1, :) = rand([1, 6]);
-            m = randi([0, 6], this.max_heap_size - 1, this.n_pop)
-            % Change all values under the first zeros to be zeros
+            m = zeros(this.max_heap_level, this.n_pop);
+            m(1, :) = randi([1, 6], 1, this.n_pop);
+            m(2 : end, :) = randi([0, 6], this.max_heap_level - 1, this.n_pop);
+            
+            % Change all children under the zero parents to be zeros
+            
+            % Reduce children under sine/cosine to be only one
+            
+            % Add children back to the end of each branch (if sine/cosine add only one)
             
             % Use boolean function 
             
