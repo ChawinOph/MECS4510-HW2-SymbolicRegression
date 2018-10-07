@@ -7,11 +7,13 @@ clear;
 down_sample_no = 10;
 n_heap = 3;
 n_pop = 10;
+p_c = 0.5;
+p_m = 0.01;
 n_crossover = 2;
 n_mutation = 1;
 n_eval = 1e3;
 
-GA = GA_SymbReg('function1.csv', down_sample_no, n_pop, n_heap);
+GA = GA_SymbReg('function1.csv', down_sample_no, n_pop, n_heap, );
 GA.plotXYScatter();
 
 %%
@@ -90,37 +92,36 @@ y_mat = zeros(length(GA.points), GA.n_pop);
 for n = 1: length(GA.points)
     m = GA.pool;
     m(m == 20) = GA.points(n, 1);
-
-for i = 2^(n_heap) - 2 : - 2 :1
-    if ~isempty(find(m(i/2, :) == 11, 1)) % check if there are any "+"
-        m(i/2 , m(i/2, :) == 11) = m(i, m(i/2, :) == 11) + m(i + 1, m(i/2, :) == 11);
-    end
     
-    if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
-        m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
+    for i = 2^(n_heap) - 2 : - 2 :1
+        if ~isempty(find(m(i/2, :) == 11, 1)) % check if there are any "+"
+            m(i/2 , m(i/2, :) == 11) = m(i, m(i/2, :) == 11) + m(i + 1, m(i/2, :) == 11);
+        end
+        
+        if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
+            m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
+        end
+        
+        if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
+            m(i/2 , m(i/2, :) == 13) = m(i, m(i/2, :) == 13)./m(i + 1, m(i/2, :) == 13);
+        end
+        
+        if ~isempty(find(m(i/2, :) == 14, 1)) % check if there are any "*"
+            m(i/2 , m(i/2, :) == 14) = m(i, m(i/2, :) == 14).*m(i + 1, m(i/2, :) == 14);
+        end
+        
+        if ~isempty(find(m(i/2, :) == 15, 1)) % check if there are any "sine"
+            m(i/2 , m(i/2, :) == 15) = sin(m(i, m(i/2, :) == 15));
+        end
+        
+        if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
+            m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
+            m([i, i + 1], m(i/2, :) == 16) = nan;
+        end
     end
-    
-    if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
-        m(i/2 , m(i/2, :) == 13) = m(i, m(i/2, :) == 13)./m(i + 1, m(i/2, :) == 13);
-    end
-    
-    if ~isempty(find(m(i/2, :) == 14, 1)) % check if there are any "*"
-        m(i/2 , m(i/2, :) == 14) = m(i, m(i/2, :) == 14).*m(i + 1, m(i/2, :) == 14);
-    end
-    
-    if ~isempty(find(m(i/2, :) == 15, 1)) % check if there are any "sine"
-        m(i/2 , m(i/2, :) == 15) = sin(m(i, m(i/2, :) == 15));
-    end
-    
-    if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
-        m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
-        m([i, i + 1], m(i/2, :) == 16) = nan;
-    end
-end
-   y_mat(n, :) = m(1, :);
+    y_mat(n, :) = m(1, :);
 end
 
 % find MAE (fitness) for each chromosome
 y_func_mat = repmat(GA.points(:,2), 1, GA.n_pop);
 mean_abs_err = mean(abs(y_func_mat - y_mat));
-sort(mean_abs_err)
