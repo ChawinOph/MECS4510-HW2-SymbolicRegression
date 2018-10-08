@@ -16,7 +16,8 @@ classdef GA_SymbReg < handle
         n_eval              % number of evaluations
         
         trunc_rate          % truncation selection ratio to improve diversity (1/n fraction form only!
-        n_tour              % number of parents for competing before geeting only top two
+        n_tour              % number of parents for competing before geeting only top (do two time)
+        p_tour              
     end
     
     properties              % Dependent variables  
@@ -30,7 +31,7 @@ classdef GA_SymbReg < handle
     
     methods
         %% Constructor
-        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval)
+        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour)
             this.filename = filename;
             this.down_sample_no = down_sample_no;
             this.points = this.importPath(this.filename);
@@ -47,6 +48,9 @@ classdef GA_SymbReg < handle
             this.n_eval = n_eval;
             this.n_gen = this.n_eval/this.n_pop;
             this.fittest = min(this.fitness);
+            
+            this.n_tour = n_tour;
+            this.p_tour = p_tour;
         end
         
         %% Member Functions
@@ -56,9 +60,70 @@ classdef GA_SymbReg < handle
             for n = 1: this.n_gen
                 % create a new array of offspring
                 offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
+                               
+                for i = 1 : ceil(this.n_pop/2)
+                    % Tournament selection
+                    % Randomly Select (uniform) parent candidates and osrt by fitness
+                    parents = nan*ones(2^this.n_heap - 1, 2);
+                    for n_round = 1:2 % run through two rounds of tournaments to get two winning parents
+                        cand_parent_indcs = randperm(this.n_pop, 2);
+                        [~, sorted_cand_indcs] = sort(this.fitness(cand_parent_indcs));
+                        if rand <= 0.9
+                            % choose the fitter on
+                            parents(:, n_round) = this.pool(:, cand_parent_indcs(sorted_cand_indcs(1)));
+                        else
+                            % choose less fit one (fluke)
+                            parents(:, n_round) = this.pool(:, cand_parent_indcs(sorted_cand_indcs(2)));
+                        end
+                    end
+                    
+                    if rand <= this.p_c
+                        % Crossover the parent at a randomly chosen point
+                        % All children have to move along swapped parent nodes
+                        
+                        % check each parent of the maximum of heap index that
+                        % can be chosen
+                                         
+                        find(~isnan(parents(:, 1)));
+                        find(~isnan(parents(:, 2)));
+                        
+                        heap_indcs_parent1 = parents(:, 1);
+                        heap_indcs_parent1(isnan(parents(:, 1))) = [];
+                        heap_indcs_parent2 = parents(:, 2);
+                        heap_indcs_parent2(isnan(heap_indcs_parent2)) = [];
+                        
+                        rand_idx1 = randperm(length(heap_indcs_parent1),1);
+                        crossover_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
+                        
+                        rand_idx2 = randperm(length(heap_indcs_parent2),1);
+                        crossover_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
+                        
+                        % Random heap index of the parent1 first and
+                        % then check the remaining level underneath. After
+                        % that, random an index of parent2 that has
+                        % fewer/equal to remaining level
+                        
+                        % get all swapped indices of heap elements
+                        cross_heap_indcs_parent1 = 2^(this.n_heap) - 2 
+                        
+                        cross_heap_indcs_parent2
+                        
+                        % prevent the heap from getting longer than the
+                        % maxmimum size
+                        
+                        % get all swapped indices of heap elements
+                        
+                        swapped_heap = parents(cross_heap_indcs_parent2, 2);
+                        parents(:, 2) = parents(cross_heap_indcs_parent1, 1);
+                        parents(:, 1) = swapped_heap;
+                        
+                    end
+                end
+                
+                
             end
         end
-      
+        
         function points = importPath(this, csv_filename)
             % Import the text file or array
             if ischar(csv_filename)
