@@ -13,8 +13,9 @@ n_crossover = 2;
 n_mutation = 1;
 n_eval = 1e3;
 
-GA = GA_SymbReg('function1.csv', down_sample_no, n_pop, n_heap, );
-GA.plotXYScatter();
+GA = GA_SymbReg('function1.csv',down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval);
+GA.plotXYScatter(true);
+GA.plotFittest(); 
 
 %%
 

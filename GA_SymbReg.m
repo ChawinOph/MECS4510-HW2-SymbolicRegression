@@ -16,7 +16,7 @@ classdef GA_SymbReg < handle
         n_eval              % number of evaluations
         
         trunc_rate          % truncation selection ratio to improve diversity (1/n fraction form only!
-        n_tournament        % number of parents for competing before geeting only top two
+        n_tour              % number of parents for competing before geeting only top two
     end
     
     properties              % Dependent variables  
@@ -24,12 +24,13 @@ classdef GA_SymbReg < handle
         fitness             % 1 x n_pop:  array of fitness correspoinding to each chromosome (mean absolute error)
         fitness_hist        % n_eval x n_pop:  array of fitness correspoinding to each chromosome over all iterations
         y_func_mat          % length(this.points) x n_pop array: repeated n_pop columns of y position of points
+        y_mat               % length(this.points) x n_pop array output from heaps
         fittest             % 1 x n_eval:  array of best fitness value of each iteration   
     end
     
     methods
         %% Constructor
-        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval, n_gen)
+        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval)
             this.filename = filename;
             this.down_sample_no = down_sample_no;
             this.points = this.importPath(this.filename);
@@ -44,10 +45,20 @@ classdef GA_SymbReg < handle
             this.n_crossover = n_crossover;
             this.n_mutation = n_mutation;
             this.n_eval = n_eval;
-            this.n_gen = n_gen;
+            this.n_gen = this.n_eval/this.n_pop;
+            this.fittest = min(this.fitness);
         end
         
         %% Member Functions
+        function evaluate(this)
+            % evaluate: Perform an evaluation (evolving to get a new set of
+            % n_pop offspring)
+            for n = 1: this.n_gen
+                % create a new array of offspring
+                offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
+            end
+        end
+      
         function points = importPath(this, csv_filename)
             % Import the text file or array
             if ischar(csv_filename)
@@ -127,7 +138,7 @@ classdef GA_SymbReg < handle
         end
         
         function updateFitness(this)
-            y_mat = zeros(length(this.points), this.n_pop);
+            this.y_mat = zeros(length(this.points), this.n_pop);
             
             for n = 1: length(this.points)
                 m = this.pool;
@@ -159,15 +170,16 @@ classdef GA_SymbReg < handle
                         m([i, i + 1], m(i/2, :) == 16) = nan;
                     end
                 end
-                y_mat(n, :) = m(1, :);
+                this.y_mat(n, :) = m(1, :);
             end
             % find MAE (fitness) for each chromosome
             this.y_func_mat = repmat(this.points(:,2), 1, this.n_pop);
-            this.fitness = mean(abs(this.y_func_mat - y_mat));
+            this.fitness = mean(abs(this.y_func_mat - this.y_mat));
+            this.fittest = mean(abs(this.y_func_mat - this.y_mat));
         end
         
         %% Visualization
-        function p = plotXYScatter(this)
+        function p = plotXYScatter(this, b_hold)
             figure
             p = scatter(this.points(:,1), this.points(:,2));
             p.Marker = '.';
@@ -176,6 +188,14 @@ classdef GA_SymbReg < handle
             ylabel('Y');
             grid on;
             grid minor;
+            if nargin > 1 && b_hold
+                hold on;
+            end
+        end
+        
+        function plotFittest(this)
+            [~, fittest_indx] = min(this.fitness);
+            plot(this.points(:,1), this.y_mat(:, fittest_indx));
         end
         
         function showSymbol(this)
