@@ -81,27 +81,43 @@ classdef GA_SymbReg < handle
                         % Crossover the parent at a randomly chosen point
                         % All children have to move along swapped parent nodes
                         
-                        % check each parent of the maximum of heap index that
-                        % can be chosen
-                                         
-                        find(~isnan(parents(:, 1)));
-                        find(~isnan(parents(:, 2)));
-                        
-                        heap_indcs_parent1 = parents(:, 1);
-                        heap_indcs_parent1(isnan(parents(:, 1))) = [];
-                        heap_indcs_parent2 = parents(:, 2);
-                        heap_indcs_parent2(isnan(heap_indcs_parent2)) = [];
-                        
-                        rand_idx1 = randperm(length(heap_indcs_parent1),1);
+                        % find lists of heap indices that are not NaN
+                        heap_indcs_parent1 = find(~isnan(parents(:, 1)));
+                        heap_indcs_parent2 = find(~isnan(parents(:, 2)));
+                                              
+                        % Random heap index of the parent1 first (inclduing the first index for diversity?) and
+                        % then check the remaining level underneath. After
+                        % that, random an index of parent2 that has
+                        % fewer/equal to remaining level 
+                        rand_idx1 = randi([1, length(heap_indcs_parent1)], 1);
                         crossover_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
+                     
+                        % thesholds of each level 
+                        lvl_thresholds = 2.^(1 : this.n_heap) - 1;    
+                        % check level of the heap index chosen from parent1
+                        cross_heap_lvl_parent1 = find(crossover_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
+                        lower_lvl_limit = this.n_heap - cross_heap_lvl_parent1;
                         
+                        % find no. of lower level for each individual heap
+                        % index
+                        remain_lvl = zeros(length(heap_indcs_parent2), 1);
+                        for j = 1 : length(heap_indcs_parent2)
+%                             for k = 1: this.n_heap
+                                current_lvl =  find(heap_indcs_parent2(j) <= lvl_thresholds, 1, 'first');
+                                for m = 1 : this.n_heap - current_lvl % run until reaching the bottom
+                                    if  ismember((2^m)*heap_indcs_parent2(j), heap_indcs_parent2) % there exist the next level                                      
+                                        % add no. of remaining level to the
+                                        % current corresponding
+                                        remain_lvl(j) = remain_lvl(j) + 1;                                      
+                                    end
+                                end
+%                             end
+                        end
+                        heap_indcs_parent2 = heap_indcs_parent2 > lvl_thresholds(cross_heap_lvl_parent1)
                         rand_idx2 = randperm(length(heap_indcs_parent2),1);
                         crossover_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
                         
-                        % Random heap index of the parent1 first and
-                        % then check the remaining level underneath. After
-                        % that, random an index of parent2 that has
-                        % fewer/equal to remaining level
+                       
                         
                         % get all swapped indices of heap elements
                         cross_heap_indcs_parent1 = 2^(this.n_heap) - 2 
