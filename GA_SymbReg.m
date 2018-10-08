@@ -98,27 +98,39 @@ classdef GA_SymbReg < handle
                         cross_heap_lvl_parent1 = find(crossover_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
                         lower_lvl_limit = this.n_heap - cross_heap_lvl_parent1;
                         
-                        % find no. of lower level for each individual heap
-                        % index
+                        % find maximum no. of lower levels for each individual heap
+                        % index (find maximum values by running through each heap index bottom up)
                         remain_lvl = zeros(length(heap_indcs_parent2), 1);
-                        for j = 1 : length(heap_indcs_parent2)
-%                             for k = 1: this.n_heap
-                                current_lvl =  find(heap_indcs_parent2(j) <= lvl_thresholds, 1, 'first');
-                                for m = 1 : this.n_heap - current_lvl % run until reaching the bottom
-                                    if  ismember((2^m)*heap_indcs_parent2(j), heap_indcs_parent2) % there exist the next level                                      
-                                        % add no. of remaining level to the
-                                        % current corresponding
-                                        remain_lvl(j) = remain_lvl(j) + 1;                                      
-                                    end
+                        for j = length(heap_indcs_parent2): -1: 1
+                            current_lvl = find(heap_indcs_parent2(j) <= lvl_thresholds, 1, 'first');
+                            current_remain_lvl = zeros(length(heap_indcs_parent2), 1);
+                            current_child_indx = heap_indcs_parent2(j);
+                            for m = 1 : current_lvl - 1 % run until reaching the top
+                                % find the list of parent current_child_lvl
+                                if mod(current_child_indx, 2) == 0 % even number
+                                    % find parent
+                                    current_child_indx = (current_child_indx)/2;
+                                else
+                                    % find parent 
+                                    current_child_indx = (current_child_indx - 1)/2;
                                 end
-%                             end
+                                current_remain_lvl(heap_indcs_parent2 == current_child_indx) = m;
+                            end
+                            % get the maximum values from the current and
+                            % the global remain lvl
+                            remain_lvl = max([remain_lvl, current_remain_lvl],[],2);
                         end
-                        heap_indcs_parent2 = heap_indcs_parent2 > lvl_thresholds(cross_heap_lvl_parent1)
+                        
+                        feasible_heap_indcs_parent2 = heap_indcs_parent2(remain_lvl <= lower_lvl_limit);
+                        
+                        % random a cross over point from the feasible
+                        % index list 
+                        
+                        
+                        
                         rand_idx2 = randperm(length(heap_indcs_parent2),1);
                         crossover_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
-                        
-                       
-                        
+                                           
                         % get all swapped indices of heap elements
                         cross_heap_indcs_parent1 = 2^(this.n_heap) - 2 
                         

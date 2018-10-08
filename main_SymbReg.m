@@ -6,7 +6,7 @@ clear;
 
 down_sample_no = 10;
 n_heap = 4;
-n_pop = 10;
+n_pop = 20;
 p_c = 0.5;
 p_m = 0.01;
 n_crossover = 2;
