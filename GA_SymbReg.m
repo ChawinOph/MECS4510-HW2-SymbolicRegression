@@ -26,7 +26,7 @@ classdef GA_SymbReg < handle
         fitness_hist        % n_eval x n_pop:  array of fitness correspoinding to each chromosome over all iterations
         y_func_mat          % length(this.points) x n_pop array: repeated n_pop columns of y position of points
         y_mat               % length(this.points) x n_pop array output from heaps
-        fittest             % 1 x n_eval:  array of best fitness value of each iteration
+        fittest             % 1 x n_eval:  array of best fitness value of each  iteration
     end
     
     methods
