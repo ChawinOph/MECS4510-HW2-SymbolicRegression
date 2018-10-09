@@ -90,65 +90,93 @@ classdef GA_SymbReg < handle
                         % that, random an index of parent2 that has
                         % fewer/equal to remaining level 
                         rand_idx1 = randi([1, length(heap_indcs_parent1)], 1);
-                        crossover_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
-                     
-                        % thesholds of each level 
-                        lvl_thresholds = 2.^(1 : this.n_heap) - 1;    
-                        % check level of the heap index chosen from parent1
-                        cross_heap_lvl_parent1 = find(crossover_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
-                        lower_lvl_limit = this.n_heap - cross_heap_lvl_parent1;
+                        cross_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
                         
-                        % find maximum no. of lower levels for each individual heap
-                        % index (find maximum values by running through each heap index bottom up)
-                        remain_lvl = zeros(length(heap_indcs_parent2), 1);
-                        for j = length(heap_indcs_parent2): -1: 1
-                            current_lvl = find(heap_indcs_parent2(j) <= lvl_thresholds, 1, 'first');
-                            current_remain_lvl = zeros(length(heap_indcs_parent2), 1);
-                            current_child_indx = heap_indcs_parent2(j);
-                            for m = 1 : current_lvl - 1 % run until reaching the top
-                                % find the list of parent current_child_lvl
-                                if mod(current_child_indx, 2) == 0 % even number
-                                    % find parent
-                                    current_child_indx = (current_child_indx)/2;
-                                else
-                                    % find parent 
-                                    current_child_indx = (current_child_indx - 1)/2;
-                                end
-                                current_remain_lvl(heap_indcs_parent2 == current_child_indx) = m;
-                            end
-                            % get the maximum values from the current and
-                            % the global remain lvl
-                            remain_lvl = max([remain_lvl, current_remain_lvl],[],2);
-                        end
+                        % find limited no. of extended levels from each
+                        % individual heap index in a parent
+                        % index (find maximum values by running through each heap index bottom up)           
+                        [extended_lvl_parent1, extended_limit_parent1] = this.findExtendedLevelAndLimit(heap_indcs_parent1);
+                        [extended_lvl_parent2, extended_limit_parent2] = this.findExtendedLevelAndLimit(heap_indcs_parent2);
                         
-                        feasible_heap_indcs_parent2 = heap_indcs_parent2(remain_lvl <= lower_lvl_limit);
-                        
+                        feasible_heap_indcs_parent2 = heap_indcs_parent2(extended_lvl_parent2 <= extended_limit_parent1);
+                        feasible_extended_lvl_parent2 = extended_lvl_parent2(extended_lvl_parent2 <= extended_limit_parent1);
                         % random a cross over point from the feasible
                         % index list 
+                        rand_idx2 = randi(length(feasible_heap_indcs_parent2), 1);
+                        cross_heap_indx_parent2 = feasible_heap_indcs_parent2(rand_idx2);
+                        
+                        % find all extended indc from cross over point in
+                        % parent 1 and 2 as long as the extended_lvl_limit 
+                        replaced_heap_inds_parent1 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
+                        replaced_heap_inds_parent2 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
+                        replaced_heap_inds_parent1(1) = cross_heap_indx_parent1;
+                        replaced_heap_inds_parent2(1) = cross_heap_indx_parent2;
+                        for j = 1: extended_limit_parent1
+%                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
+%                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
+%                             
+%                             replaced_heap_inds_parent2 = 
+                        end
+                                            
+                        feasible_extended_lvl_parent2(rand_idx2)
                         
                         
+                        % get all replaced indices that has the same size as
+                        % the gene from the other parent
                         
-                        rand_idx2 = randperm(length(heap_indcs_parent2),1);
-                        crossover_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
-                                           
+%                         replaced_indc_parent1 = 
+                        
+                        % get all children indices (not NaN) of each cross over index
+                        
+                        
                         % get all swapped indices of heap elements
-                        cross_heap_indcs_parent1 = 2^(this.n_heap) - 2 
+                        % find the current level 
+                        current_lvl_index1 = find(cross_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
+                        current_lvl_index2 = find(cross_heap_indx_parent2 <= lvl_thresholds, 1, 'first');
                         
-                        cross_heap_indcs_parent2
-                        
-                        % prevent the heap from getting longer than the
-                        % maxmimum size
+%                         cross_heap_indcs_parent1 = 
+%                         cross_heap_indcs_parent2 =
                         
                         % get all swapped indices of heap elements
                         
                         swapped_heap = parents(cross_heap_indcs_parent2, 2);
-                        parents(:, 2) = parents(cross_heap_indcs_parent1, 1);
+                        parents(cross_heap_indcs_parent2, 2) = parents(cross_heap_indcs_parent1, 1);
                         parents(:, 1) = swapped_heap;
                         
                     end
                 end
                 
                 
+            end
+        end
+        
+        function [extended_level, extend_limits] = findExtendedLevelAndLimit(this, heap_indcs_parent)
+            % find maximum no. of extended levels from each
+            % individual heap index in parent2
+            % index (find maximum values by running through each heap index bottom up)
+            extended_level = zeros(length(heap_indcs_parent), 1);
+            extend_limits = zeros(length(heap_indcs_parent), 1);
+            lvl_thresholds = 2.^(1 : this.n_heap) - 1;
+            
+            for j = length(heap_indcs_parent): -1: 1
+                current_lvl = find(heap_indcs_parent(j) <= lvl_thresholds, 1, 'first');
+                extend_limits(j) = this.n_heap - current_lvl;
+                current_remain_lvl = zeros(length(heap_indcs_parent), 1);
+                current_child_indx = heap_indcs_parent(j);
+                for m = 1 : current_lvl - 1 % run until reaching the top
+                    % find the list of parent current_child_lvl
+                    if mod(current_child_indx, 2) == 0 % even number
+                        % find parent
+                        current_child_indx = (current_child_indx)/2;
+                    else
+                        % find parent
+                        current_child_indx = (current_child_indx - 1)/2;
+                    end
+                    current_remain_lvl(heap_indcs_parent == current_child_indx) = m;
+                end
+                % get the maximum values from the current and
+                % the global remain lvl
+                extended_level = max([extended_level, current_remain_lvl],[],2);
             end
         end
         
