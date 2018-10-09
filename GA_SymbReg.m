@@ -17,16 +17,16 @@ classdef GA_SymbReg < handle
         
         trunc_rate          % truncation selection ratio to improve diversity (1/n fraction form only!
         n_tour              % number of parents for competing before geeting only top (do two time)
-        p_tour              
+        p_tour
     end
     
-    properties              % Dependent variables  
+    properties              % Dependent variables
         n_gen               % number of evaluations/n_pop
         fitness             % 1 x n_pop:  array of fitness correspoinding to each chromosome (mean absolute error)
         fitness_hist        % n_eval x n_pop:  array of fitness correspoinding to each chromosome over all iterations
         y_func_mat          % length(this.points) x n_pop array: repeated n_pop columns of y position of points
         y_mat               % length(this.points) x n_pop array output from heaps
-        fittest             % 1 x n_eval:  array of best fitness value of each iteration   
+        fittest             % 1 x n_eval:  array of best fitness value of each iteration
     end
     
     methods
@@ -60,7 +60,7 @@ classdef GA_SymbReg < handle
             for n = 1: this.n_gen
                 % create a new array of offspring
                 offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
-                               
+                
                 for i = 1 : ceil(this.n_pop/2)
                     % Tournament selection
                     % Randomly Select (uniform) parent candidates and osrt by fitness
@@ -84,58 +84,69 @@ classdef GA_SymbReg < handle
                         % find lists of heap indices that are not NaN
                         heap_indcs_parent1 = find(~isnan(parents(:, 1)));
                         heap_indcs_parent2 = find(~isnan(parents(:, 2)));
-                                              
-                        % Random heap index of the parent1 first (inclduing the first index for diversity?) and
-                        % then check the remaining level underneath. After
-                        % that, random an index of parent2 that has
-                        % fewer/equal to remaining level 
-                        rand_idx1 = randi([1, length(heap_indcs_parent1)], 1);
-                        cross_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
                         
                         % find limited no. of extended levels from each
                         % individual heap index in a parent
-                        % index (find maximum values by running through each heap index bottom up)           
+                        % index (find maximum values by running through each heap index bottom up)
                         [extended_lvl_parent1, extended_limit_parent1] = this.findExtendedLevelAndLimit(heap_indcs_parent1);
                         [extended_lvl_parent2, extended_limit_parent2] = this.findExtendedLevelAndLimit(heap_indcs_parent2);
                         
-                        feasible_heap_indcs_parent2 = heap_indcs_parent2(extended_lvl_parent2 <= extended_limit_parent1);
-                        feasible_extended_lvl_parent2 = extended_lvl_parent2(extended_lvl_parent2 <= extended_limit_parent1);
-                        % random a cross over point from the feasible
-                        % index list 
-                        rand_idx2 = randi(length(feasible_heap_indcs_parent2), 1);
-                        cross_heap_indx_parent2 = feasible_heap_indcs_parent2(rand_idx2);
+                        % Random heap index of the parent1 first (inclduing
+                        % the first index for diversity?) and
+                        % then check the remaining level underneath.
+                        rand_idx1 = randi([1, length(heap_indcs_parent1)], 1);
+                        cross_heap_indx_parent1 = heap_indcs_parent1(rand_idx1);
+                        
+                        % get the extesion limit from the parent
+                        extended_limit_rand_parent1 = extended_limit_parent1(rand_idx1);
+                        
+                        % filter a set of parent2 index candidate that has the
+                        % extension of the point within the limit of the
+                        % random point from parent 1
+                        feasible_heap_indcs_parent2 = heap_indcs_parent2(extended_lvl_parent2 <= extended_limit_rand_parent1);
+                        
+                        % filter a set of parent2 index candidate that has
+                        % enough extension limit for the crossover point
+                        % from parent1
+                        feasible_heap_indcs_parent2 = feasible_heap_indcs_parent2(extended_lvl_parent1(rand_idx1) <= ...
+                            extended_limit_parent2(extended_lvl_parent2 <= extended_limit_rand_parent1));
+                        
+                        % random a point from the feasible point list in
+                        % parent 2
+                        rand_idx2 = randi([1, length(feasible_heap_indcs_parent2)], 1);
+                        cross_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
                         
                         % find all extended indc from cross over point in
-                        % parent 1 and 2 as long as the extended_lvl_limit 
+                        % parent 1 and 2 as long as the extended_lvl_limit
                         replaced_heap_inds_parent1 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
                         replaced_heap_inds_parent2 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
                         replaced_heap_inds_parent1(1) = cross_heap_indx_parent1;
                         replaced_heap_inds_parent2(1) = cross_heap_indx_parent2;
                         for j = 1: extended_limit_parent1
-%                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
-%                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
-%                             
-%                             replaced_heap_inds_parent2 = 
+                            %                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
+                            %                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
+                            %
+                            %                             replaced_heap_inds_parent2 =
                         end
-                                            
+                        
                         feasible_extended_lvl_parent2(rand_idx2)
                         
                         
                         % get all replaced indices that has the same size as
                         % the gene from the other parent
                         
-%                         replaced_indc_parent1 = 
+                        %                         replaced_indc_parent1 =
                         
                         % get all children indices (not NaN) of each cross over index
                         
                         
                         % get all swapped indices of heap elements
-                        % find the current level 
+                        % find the current level
                         current_lvl_index1 = find(cross_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
                         current_lvl_index2 = find(cross_heap_indx_parent2 <= lvl_thresholds, 1, 'first');
                         
-%                         cross_heap_indcs_parent1 = 
-%                         cross_heap_indcs_parent2 =
+                        %                         cross_heap_indcs_parent1 =
+                        %                         cross_heap_indcs_parent2 =
                         
                         % get all swapped indices of heap elements
                         
