@@ -162,14 +162,15 @@ classdef GA_SymbReg < handle
                     offspring  = [offspring, parents]; %#ok<AGROW>
                 end
                 
-                if mod(this.n_pop, 2) == 1 % odd number of population
+                if mod(this.n_pop - this.n_elite, 2) == 1 % odd number of population
                     % randomly remove one offspring
                     remove_indx = randi(this.n_pop, 1);
-                    offspring = offspring(1:end ~= remove_indx);
+                    offspring = offspring(:, 1:end ~= remove_indx);
                 end
                 
-                % Add elites in the current generation to the current genes    
-                
+                % Add elites in the current generation to the current genes 
+                [~, sorted_fitness_indcs] = sort(this.fitness);
+                offspring = [offspring, this.pool(: , sorted_fitness_indcs(1:this.n_elite))]; %#ok<AGROW>
                 
                 this.pool = offspring;
                 fval = this.updateFitness();
@@ -364,6 +365,15 @@ classdef GA_SymbReg < handle
         
         function showSymbol(this)
             
+        end
+        
+        function plotDot(this)
+            % Dot plot
+            gens = reshape(repmat(1: this.n_gen, this.n_pop, 1), [], 1);
+            scat1 = scatter(gens, reshape(this.fitness_hist_gen', [], 1));
+            ylim([0 1]);
+            scat1.Marker = '.';
+            scat1.MarkerEdgeColor = 'b';
         end
         
     end
