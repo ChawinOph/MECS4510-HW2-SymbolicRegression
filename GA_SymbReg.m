@@ -17,21 +17,25 @@ classdef GA_SymbReg < handle
         
         trunc_rate          % truncation selection ratio to improve diversity (1/n fraction form only!
         n_tour              % number of parents for competing before geeting only top (do two time)
-        p_tour
+        p_tour              % prob used in tournament selection
+        n_elite             % number of top parents to be kept to the next generation
     end
     
     properties              % Dependent variables
         n_gen               % number of evaluations/n_pop
         fitness             % 1 x n_pop:  array of fitness correspoinding to each chromosome (mean absolute error)
-        fitness_hist        % n_eval x n_pop:  array of fitness correspoinding to each chromosome over all iterations
+        fitness_hist        % n_eval x n_pop:  array of fitness correspoinding to each chromosome over all evals
+        fitness_hist_gen    % n_gen x n_pop:  array of fitness correspoinding to each chromosome over all evals
         y_func_mat          % length(this.points) x n_pop array: repeated n_pop columns of y position of points
         y_mat               % length(this.points) x n_pop array output from heaps
-        fittest             % 1 x n_eval:  array of best fitness value of each  iteration
+        fittest             % n_eval x 1 :  array of best fitness value of each eval
+        fittest_gen         % n_gen x 1 :  array of best fitness value of each gen
+        fittest_indv        % The current fittest individual in the pool
     end
     
     methods
         %% Constructor
-        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour)
+        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour, n_elite)
             this.filename = filename;
             this.down_sample_no = down_sample_no;
             this.points = this.importPath(this.filename);
@@ -47,10 +51,14 @@ classdef GA_SymbReg < handle
             this.n_mutation = n_mutation;
             this.n_eval = n_eval;
             this.n_gen = this.n_eval/this.n_pop;
-            this.fittest = min(this.fitness);
+            this.fitness_hist = zeros(this.n_eval, this.n_pop);
+            this.fitness_hist_gen = zeros(this.n_gen, this.n_pop);           
+            this.fittest = zeros(this.n_gen, 1);
+            this.fittest_gen = zeros(this.n_gen, 1);
             
             this.n_tour = n_tour;
             this.p_tour = p_tour;
+            this.n_elite = n_elite;
         end
         
         %% Member Functions
@@ -59,16 +67,17 @@ classdef GA_SymbReg < handle
             % n_pop offspring)
             for n = 1: this.n_gen
                 % create a new array of offspring
-                offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
+                %                 offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
+                offspring = [];
                 
-                for i = 1 : ceil(this.n_pop/2)
+                for i = 1 : ceil((this.n_pop - this.n_elite)/2) 
                     % Tournament selection
                     % Randomly Select (uniform) parent candidates and osrt by fitness
                     parents = nan*ones(2^this.n_heap - 1, 2);
                     for n_round = 1:2 % run through two rounds of tournaments to get two winning parents
                         cand_parent_indcs = randperm(this.n_pop, 2);
                         [~, sorted_cand_indcs] = sort(this.fitness(cand_parent_indcs));
-                        if rand <= 0.9
+                        if rand <= this.p_tour
                             % choose the fitter on
                             parents(:, n_round) = this.pool(:, cand_parent_indcs(sorted_cand_indcs(1)));
                         else
@@ -114,50 +123,71 @@ classdef GA_SymbReg < handle
                         % random a point from the feasible point list in
                         % parent 2
                         rand_idx2 = randi([1, length(feasible_heap_indcs_parent2)], 1);
-                        cross_heap_indx_parent2 = heap_indcs_parent2(rand_idx2);
+                        cross_heap_indx_parent2 = feasible_heap_indcs_parent2(rand_idx2);
                         
-                        % find all extended indc from cross over point in
-                        % parent 1 and 2 as long as the extended_lvl_limit
-                        replaced_heap_inds_parent1 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
-                        replaced_heap_inds_parent2 = zeros(2^(extended_limit_parent1 + 1) - 1, 1);
-                        replaced_heap_inds_parent1(1) = cross_heap_indx_parent1;
-                        replaced_heap_inds_parent2(1) = cross_heap_indx_parent2;
-                        for j = 1: extended_limit_parent1
-                            %                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
-                            %                             replaced_heap_inds_parent1() = cross_heap_lvl_parent1
-                            %
-                            %                             replaced_heap_inds_parent2 =
-                        end
+                        parent1_extend_swapped_lvl = extended_lvl_parent1(heap_indcs_parent1 == cross_heap_indx_parent1);
+                        parent2_extend_swapped_lvl = extended_lvl_parent2(heap_indcs_parent2 == cross_heap_indx_parent2);                       
+                        parent1_extend_removed_lvl = extended_limit_parent1(heap_indcs_parent1 == cross_heap_indx_parent1);                       
+                        parent2_extend_removed_lvl = extended_limit_parent2(heap_indcs_parent2 == cross_heap_indx_parent2);
                         
-                        feasible_extended_lvl_parent2(rand_idx2)
+                        swapped_heap_inds_parent1 = this.findExtendedIndices(cross_heap_indx_parent1, parent1_extend_swapped_lvl);
+                        swapped_heap_inds_parent2 = this.findExtendedIndices(cross_heap_indx_parent2, parent2_extend_swapped_lvl);
                         
+                        replaced_heap_inds_parent1 = this.findExtendedIndices(cross_heap_indx_parent1, parent2_extend_swapped_lvl);
+                        replaced_heap_inds_parent2 = this.findExtendedIndices(cross_heap_indx_parent2, parent1_extend_swapped_lvl);
                         
-                        % get all replaced indices that has the same size as
-                        % the gene from the other parent
-                        
-                        %                         replaced_indc_parent1 =
-                        
-                        % get all children indices (not NaN) of each cross over index
-                        
-                        
-                        % get all swapped indices of heap elements
-                        % find the current level
-                        current_lvl_index1 = find(cross_heap_indx_parent1 <= lvl_thresholds, 1, 'first');
-                        current_lvl_index2 = find(cross_heap_indx_parent2 <= lvl_thresholds, 1, 'first');
-                        
-                        %                         cross_heap_indcs_parent1 =
-                        %                         cross_heap_indcs_parent2 =
-                        
-                        % get all swapped indices of heap elements
-                        
-                        swapped_heap = parents(cross_heap_indcs_parent2, 2);
-                        parents(cross_heap_indcs_parent2, 2) = parents(cross_heap_indcs_parent1, 1);
-                        parents(:, 1) = swapped_heap;
-                        
+                        removed_heap_inds_parent1 =  this.findExtendedIndices(cross_heap_indx_parent1, parent1_extend_removed_lvl);                      
+                        removed_heap_inds_parent2 = this.findExtendedIndices(cross_heap_indx_parent2, parent2_extend_removed_lvl);
+                                   
+                        % get a piece of heap from parent1 that is as long
+                        % as the extension in parent 2 and erase the heap
+                        % all the way down to the bottom
+                        swapped_heap_from_parent1 = parents(swapped_heap_inds_parent1, 1);
+                        parents(removed_heap_inds_parent1, 1) = NaN;
+                        % vice versa
+                        swapped_heap_from_parent2 = parents(swapped_heap_inds_parent2, 2);
+                        parents(removed_heap_inds_parent2, 2) = NaN;
+
+                        % put the stored swapped heaps into the other
+                        % parent
+                        parents(replaced_heap_inds_parent1, 1) = swapped_heap_from_parent2;
+                        parents(replaced_heap_inds_parent2, 2) = swapped_heap_from_parent1;
+                       
                     end
+                    
+                    if rand <= this.p_m
+                        % mutate
+                    end
+                    
+                    offspring  = [offspring, parents]; %#ok<AGROW>
                 end
                 
+                if mod(this.n_pop, 2) == 1 % odd number of population
+                    % randomly remove one offspring
+                    remove_indx = randi(this.n_pop, 1);
+                    offspring = offspring(1:end ~= remove_indx);
+                end
                 
+                % Add elites in the current generation to the current genes    
+                
+                
+                this.pool = offspring;
+                fval = this.updateFitness();
+                this.fitness_hist(1 + this.n_pop*(n - 1): this.n_pop*n, :) = repmat(fval, this.n_pop, 1);
+                this.fitness_hist_gen(n, :) = fval;
+                this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
+                this.fittest_gen(n) = min(this.fitness);  
+            end
+        end
+        
+        function extended_indcs = findExtendedIndices(~, start_index, no_extended_level)
+            extended_indcs = zeros(1, 2^(no_extended_level + 1) - 1);
+            extended_indcs(1) = start_index;
+            for n_extend = 1 : length(extended_indcs)
+                if  n_extend <= 2^(no_extended_level + 1 - 1) - 1
+                    extended_indcs(2*n_extend) = 2*extended_indcs(n_extend);
+                    extended_indcs(2*n_extend + 1) = 2*extended_indcs(n_extend) + 1;
+                end
             end
         end
         
@@ -269,7 +299,7 @@ classdef GA_SymbReg < handle
             end
         end
         
-        function updateFitness(this)
+        function fval = updateFitness(this)
             this.y_mat = zeros(length(this.points), this.n_pop);
             
             for n = 1: length(this.points)
@@ -307,7 +337,9 @@ classdef GA_SymbReg < handle
             % find MAE (fitness) for each chromosome
             this.y_func_mat = repmat(this.points(:,2), 1, this.n_pop);
             this.fitness = mean(abs(this.y_func_mat - this.y_mat));
-            this.fittest = mean(abs(this.y_func_mat - this.y_mat));
+            [~, min_indx] = min(this.fitness);
+            this.fittest_indv = this.pool(:, min_indx);                  
+            fval = this.fitness;
         end
         
         %% Visualization
