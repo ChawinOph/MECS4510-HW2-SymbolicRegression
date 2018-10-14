@@ -183,9 +183,7 @@ classdef GA_SymbReg < handle
                 this.fitness_hist(1 + this.n_pop*(n - 1): this.n_pop*n, :) = repmat(fval, this.n_pop, 1);
                 this.fitness_hist_gen(n, :) = fval;
                 this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
-                this.fittest_gen(n) = min(this.fitness);
-                
-                
+                this.fittest_gen(n) = min(this.fitness);             
                 
             end
         end
@@ -315,18 +313,52 @@ classdef GA_SymbReg < handle
         
         function fval = updateFitness(this)
             this.y_mat = zeros(length(this.points), this.n_pop);
-            threshold = 1e-4;
+            min_threshold = 1e-4; % threshold for detecting minimum contribution   
+            max_threshold = 1e2; % threshold for detecting /0
+            % simplify
+            % snipping: replace a sub-branch with a constant (average)
+            % pruning: Eliminate sub-braches with relatively low
+            % contribution (if evaluation is under a threshold,replace the heap node by a constant of zero)
+            % go through each level of the heap
+            for i = 2^(this.n_heap) - 2 : - 2 :1
+                 % the follownig cases cover the cases of constants and
+                 % the variable x (20)
+                 
+                 if ~isempty(find(this.pool(i, :) == 20 || this.pool(i, :) <= 10, 1)) % check if there are any constants or x
+                     % if the parent is the minus operator
+                     if ~isempty(find(this.pool(i/2, :) == 12, 1)) % check if there are any "-"
+                         if ~isempty(find(abs(this.pool(i, this.pool(i/2, :) == 12) - this.pool(i + 1, this.pool(i/2, :) == 12)) < min_threshold, 1))
+                             % if there exists some columns that the have
+                             % absolute values under threshold
+                             simp_columns = abs(this.pool(i, this.pool(i/2, :) == 12) - this.pool(i + 1, this.pool(i/2, :) == 12)) < min_threshold;
+                             this.pool(i/2, simp_columns) = 0;
+                             this.pool(i, simp_columns) = NaN;
+                             this.pool(i + 1, simp_columns) = NaN;
+                         end
+                     end
+                     
+                     % if the parent is the divide operator
+                     if ~isempty(find(this.pool(i/2, :) == 13, 1)) % check if there are any "/"
+                         if ~isempty(find(abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1, 1))
+                             % if there exists some columns that the have
+                             % value of one because of the same values being
+                             % divided
+                             simp_columns = abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1;
+                             this.pool(i/2, simp_columns) = 1;
+                             this.pool(i, simp_columns) = NaN;
+                             this.pool(i + 1, simp_columns) = NaN;
+                         end
+                     end
+                 end
+%                  % if there are only constants (<10) (maybe not good for diversity)
+%                  if ~isempty(find(this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10, 1)) % check if there are any "-"
+%                      if     
+%                  end
+            end
             
-            for n = 1: length(this.points)
+            for n = 1: length(this.points)                 
                 m = this.pool;
-                m(m == 20) = this.points(n, 1);
-                
-                % simplify
-                % snipping: replace a sub-branch with a constant (average)
-          
-                
-                % pruning: Eliminate sub-braches with relatively low
-                % contribution (if evaluation is zero replace the heap node by a constant of zero)
+                m(m == 20) = this.points(n, 1);            
                 
                 for i = 2^(this.n_heap) - 2 : - 2 :1
                     if ~isempty(find(m(i/2, :) == 11, 1)) % check if there are any "+"
@@ -334,10 +366,7 @@ classdef GA_SymbReg < handle
                     end
                     
                     if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
-                        m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
-                        if ~isempty(find(abs(m(i/2 , m(i/2, :) == 12)) <= threshold, 1))
-                            
-                        end
+                        m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);              
                     end
                     
                     if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
