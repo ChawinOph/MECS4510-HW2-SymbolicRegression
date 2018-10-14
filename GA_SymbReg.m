@@ -311,51 +311,71 @@ classdef GA_SymbReg < handle
             end
         end
         
-        function fval = updateFitness(this)
-            this.y_mat = zeros(length(this.points), this.n_pop);
-            min_threshold = 1e-4; % threshold for detecting minimum contribution   
-            max_threshold = 1e2; % threshold for detecting /0
-            % simplify
+        function fval = updateFitness(this) 
+            
+            % simplify (may do it every other a certain number of gens)
             % snipping: replace a sub-branch with a constant (average)
             % pruning: Eliminate sub-braches with relatively low
             % contribution (if evaluation is under a threshold,replace the heap node by a constant of zero)
             % go through each level of the heap
-            for i = 2^(this.n_heap) - 2 : - 2 :1
-                 % the follownig cases cover the cases of constants and
-                 % the variable x (20)
-                 
-                 if ~isempty(find(this.pool(i, :) == 20 || this.pool(i, :) <= 10, 1)) % check if there are any constants or x
+            min_threshold = 1e-4; % threshold for detecting minimum contribution   
+            denom_threshold = 1e-2; % threshold for detecting /0
+            
+            for i = 2^(this.n_heap) - 2 : - 2 :1               
+                 % check if both children are both variables x or both
+                 % contants
+                 if ~isempty(find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10), 1)) 
+                     indcs = find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10));
                      % if the parent is the minus operator
-                     if ~isempty(find(this.pool(i/2, :) == 12, 1)) % check if there are any "-"
-                         if ~isempty(find(abs(this.pool(i, this.pool(i/2, :) == 12) - this.pool(i + 1, this.pool(i/2, :) == 12)) < min_threshold, 1))
+                     if ~isempty(find(this.pool(i/2, indcs) == 12, 1)) % check if there are any "-"
+                         sub_indcs = indcs(this.pool(i/2, indcs) == 12);
+                         if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
                              % if there exists some columns that the have
                              % absolute values under threshold
-                             simp_columns = abs(this.pool(i, this.pool(i/2, :) == 12) - this.pool(i + 1, this.pool(i/2, :) == 12)) < min_threshold;
-                             this.pool(i/2, simp_columns) = 0;
-                             this.pool(i, simp_columns) = NaN;
-                             this.pool(i + 1, simp_columns) = NaN;
+                             subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
+                             % change the parent to simplified values
+                             this.pool(i/2, subsub_indcs) = 0;
+                             % remove the children
+                             this.pool(i, subsub_indcs) = NaN;
+                             this.pool(i + 1, subsub_indcs) = NaN;
                          end
                      end
                      
                      % if the parent is the divide operator
-                     if ~isempty(find(this.pool(i/2, :) == 13, 1)) % check if there are any "/"
-                         if ~isempty(find(abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1, 1))
+                     if ~isempty(find(this.pool(i/2, indcs) == 13, 1)) % check if there are any "/"
+                         sub_indcs = indcs(this.pool(i/2, indcs) == 13);
+                         if ~isempty(find(abs(this.pool(i, sub_indcs )./this.pool(i + 1, sub_indcs )) == 1, 1))
                              % if there exists some columns that the have
                              % value of one because of the same values being
-                             % divided
-                             simp_columns = abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1;
-                             this.pool(i/2, simp_columns) = 1;
-                             this.pool(i, simp_columns) = NaN;
-                             this.pool(i + 1, simp_columns) = NaN;
-                         end
+                             % divide                             
+                             subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs)./this.pool(i + 1, sub_indcs) == 1)); %#ok<FNDSB>
+                             % change the parent to simplified values
+                             this.pool(i/2, subsub_indcs) = 1;
+                             % remove the children
+                             this.pool(i, subsub_indcs) = NaN;
+                             this.pool(i + 1, subsub_indcs) = NaN;
+                         end                                                 
                      end
-                 end
-%                  % if there are only constants (<10) (maybe not good for diversity)
-%                  if ~isempty(find(this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10, 1)) % check if there are any "-"
-%                      if     
-%                  end
+                 end 
+                 % after simplification on the variable/constant level 
+                 % , which created 1,0 in the heaps, we have to simplify
+                 % everything again based on each kind of operators
+                 
+                 % "/" sign
+%                  if ~isempty(find(this.pool(i + 1, this.pool(i/2, :) == 13)) == 1, 1))
+%                      % check if there exists any low values of
+%                      % denominator or the exact zero
+%                      simp_columns = abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1;
+%                      % change the parent to simplified values
+%                      this.pool(i/2, simp_columns) = 1;
+%                      % remove the children
+%                      this.pool(i, simp_columns) = NaN;
+%                      this.pool(i + 1, simp_columns) = NaN;
+%                  end      
+                                 
             end
             
+            this.y_mat = zeros(length(this.points), this.n_pop);
             for n = 1: length(this.points)                 
                 m = this.pool;
                 m(m == 20) = this.points(n, 1);            
