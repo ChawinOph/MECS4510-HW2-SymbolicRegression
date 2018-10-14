@@ -335,9 +335,9 @@ classdef GA_SymbReg < handle
                     
                     if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
                         m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
-%                         if ~isempty(find(abs(m(i/2 , m(i/2, :) == 12)) <= threshold, 1))
-%                             
-%                         end
+                        if ~isempty(find(abs(m(i/2 , m(i/2, :) == 12)) <= threshold, 1))
+                            
+                        end
                     end
                     
                     if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
