@@ -159,7 +159,8 @@ classdef GA_SymbReg < handle
                     end
                     
                     if rand <= this.p_m
-                        % mutate
+                        % mutate the parents
+                        
                         % change constants by small amount
                         % swap operators
                     end
@@ -184,11 +185,7 @@ classdef GA_SymbReg < handle
                 this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
                 this.fittest_gen(n) = min(this.fitness);
                 
-                % simplify
-                % snipping: repalce a sub-branch with a constant (average)
                 
-                % pruning: Eliminate sub-braches with relatively low
-                % contirbution
                 
             end
         end
@@ -248,7 +245,7 @@ classdef GA_SymbReg < handle
         
         function m = contructHeaps(this, n_lvl)
             if nargin > 1
-                m = nan*ones(2^this.n_heap - 1, this.n_pop);
+                m = nan*ones(2^n_lvl - 1, this.n_pop);
             else
                 m = nan*ones(2^this.n_heap - 1, this.n_pop);
             end
@@ -318,10 +315,18 @@ classdef GA_SymbReg < handle
         
         function fval = updateFitness(this)
             this.y_mat = zeros(length(this.points), this.n_pop);
+            threshold = 1e-4;
             
             for n = 1: length(this.points)
                 m = this.pool;
                 m(m == 20) = this.points(n, 1);
+                
+                % simplify
+                % snipping: replace a sub-branch with a constant (average)
+          
+                
+                % pruning: Eliminate sub-braches with relatively low
+                % contribution (if evaluation is zero replace the heap node by a constant of zero)
                 
                 for i = 2^(this.n_heap) - 2 : - 2 :1
                     if ~isempty(find(m(i/2, :) == 11, 1)) % check if there are any "+"
@@ -330,6 +335,9 @@ classdef GA_SymbReg < handle
                     
                     if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
                         m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
+%                         if ~isempty(find(abs(m(i/2 , m(i/2, :) == 12)) <= threshold, 1))
+%                             
+%                         end
                     end
                     
                     if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
@@ -347,7 +355,8 @@ classdef GA_SymbReg < handle
                     if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
                         m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
                         m([i, i + 1], m(i/2, :) == 16) = nan;
-                    end
+                    end                  
+                    
                 end
                 this.y_mat(n, :) = m(1, :);
             end
