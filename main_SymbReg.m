@@ -5,7 +5,7 @@ clear;
 %% GA
 
 down_sample_no = 10;
-n_heap = 5;
+n_heap = 5; % or 4?
 n_pop = 250;
 p_c = 0.95; 
 p_m = 0.01;
