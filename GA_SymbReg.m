@@ -154,8 +154,7 @@ classdef GA_SymbReg < handle
                         % put the stored swapped heaps into the other
                         % parent
                         parents(replaced_heap_inds_parent1, 1) = swapped_heap_from_parent2;
-                        parents(replaced_heap_inds_parent2, 2) = swapped_heap_from_parent1;
-                        
+                        parents(replaced_heap_inds_parent2, 2) = swapped_heap_from_parent1;                       
                     end
                     
                     if rand <= this.p_m
@@ -184,8 +183,7 @@ classdef GA_SymbReg < handle
                 this.fitness_hist(1 + this.n_pop*(n - 1): this.n_pop*n, :) = repmat(fval, this.n_pop, 1);
                 this.fitness_hist_gen(n, :) = fval;
                 this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
-                this.fittest_gen(n) = min(this.fitness);
-                
+                this.fittest_gen(n) = min(this.fitness);                
             end
         end
         
@@ -231,10 +229,10 @@ classdef GA_SymbReg < handle
         end
         
         function extended_indcs = findExtendedIndicesToEnd(this, start_index)
-             lvl_thresholds = 2.^(1 : this.n_heap) - 1;
-             current_lvl = find(start_index <= lvl_thresholds, 1, 'first');
-             extending_limits = this.n_heap - current_lvl;
-             extended_indcs = this.findExtendedIndices(start_index, extending_limits);
+            lvl_thresholds = 2.^(1 : this.n_heap) - 1;
+            current_lvl = find(start_index <= lvl_thresholds, 1, 'first');
+            extending_limits = this.n_heap - current_lvl;
+            extended_indcs = this.findExtendedIndices(start_index, extending_limits);
         end
         
         function points = importPath(this, csv_filename)
@@ -325,48 +323,46 @@ classdef GA_SymbReg < handle
             % pruning: Eliminate sub-braches with relatively low
             % contribution (if evaluation is under a threshold,replace the heap node by a constant of zero)
             % go through each level of the heap
-            min_threshold = 1e-4; % threshold for detecting minimum contribution
+            min_threshold = 1e-4; % threshold for detecting minimum contribution by (x - x = 0) or (constant1 - constant1 < min_threshold)
             denom_threshold = 1e-2; % threshold for detecting /0
             
             for i = 2^(this.n_heap) - 2 : - 2 :1
                 % check if both children are both variables x or both
                 % contants
-                if ~isempty(find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10), 1))
-                    indcs = find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10));
-                    % if the parent is the minus operator
-                    if ~isempty(find(this.pool(i/2, indcs) == 12, 1)) % check if there are any "-"
-                        sub_indcs = indcs(this.pool(i/2, indcs) == 12);
-                        if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
-                            % if there exists some columns that the have
-                            % absolute values under threshold
-                            subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
-                            % change the parent to simplified values
-                            this.pool(i/2, subsub_indcs) = 0;
-                            % remove the children
-                            this.pool(i, subsub_indcs) = NaN;
-                            this.pool(i + 1, subsub_indcs) = NaN;
-                        end
-                    end
-                    
-                    % if the parent is the divide operator
-                    if ~isempty(find(this.pool(i/2, indcs) == 13, 1)) % check if there are any "/"
-                        sub_indcs = indcs(this.pool(i/2, indcs) == 13);
-                        if ~isempty(find(abs(this.pool(i, sub_indcs )./this.pool(i + 1, sub_indcs )) == 1, 1))
-                            % if there exists some columns that the have
-                            % value of one because of the same values being
-                            % divide
-                            subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs)./this.pool(i + 1, sub_indcs) == 1)); %#ok<FNDSB>
-                            % change the parent to simplified values
-                            this.pool(i/2, subsub_indcs) = 1;
-                            % remove the children
-                            this.pool(i, subsub_indcs) = NaN;
-                            this.pool(i + 1, subsub_indcs) = NaN;
-                        end
-                    end
-                    
-                end
-                   
-                % clean up the 1 and 0
+%                 if ~isempty(find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10), 1))
+%                     indcs = find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10));
+%                     % if the parent is the minus operator
+%                     if ~isempty(find(this.pool(i/2, indcs) == 12, 1)) % check if there are any "-"
+%                         sub_indcs = indcs(this.pool(i/2, indcs) == 12);
+%                         if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
+%                             % if there exists some columns that the have
+%                             % absolute values under threshold
+%                             subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
+%                             % change the parent to simplified values
+%                             this.pool(i/2, subsub_indcs) = 0;
+%                             % remove the children
+%                             this.pool(i, subsub_indcs) = NaN;
+%                             this.pool(i + 1, subsub_indcs) = NaN;
+%                         end
+%                     end
+%                     
+%                     % if the parent is the divide operator
+%                     if ~isempty(find(this.pool(i/2, indcs) == 13, 1)) % check if there are any "/"
+%                         sub_indcs = indcs(this.pool(i/2, indcs) == 13);
+%                         if ~isempty(find(abs(this.pool(i, sub_indcs )./this.pool(i + 1, sub_indcs )) == 1, 1))
+%                             % if there exists some columns that the have
+%                             % value of one because of the same values being
+%                             % divide
+%                             subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs)./this.pool(i + 1, sub_indcs) == 1)); %#ok<FNDSB>
+%                             % change the parent to simplified values
+%                             this.pool(i/2, subsub_indcs) = 1;
+%                             % remove the children
+%                             this.pool(i, subsub_indcs) = NaN;
+%                             this.pool(i + 1, subsub_indcs) = NaN;
+%                         end
+%                     end
+%                     
+%                 end
                 % having parent as "/" operator
                 if ~isempty(find(this.pool(i/2, :)== 13, 1))
                     % check if there exists any low values of
@@ -377,53 +373,110 @@ classdef GA_SymbReg < handle
                         % a random constant
                         sub_indcs = indcs(find(abs(this.pool(i + 1, indcs)) < denom_threshold)); %#ok<FNDSB>
                         this.pool(i + 1, sub_indcs) = 20*rand(size(sub_indcs)) - 10;
-                             
-                        % check if there exists any denominator = 1
-                    elseif ~isempty(find(this.pool(i + 1, indcs) == 1, 1))
+                    end
+                    % check if there exists any denominator = 1
+                    if ~isempty(find(this.pool(i + 1, indcs) == 1, 1))
                         % if the denominator one, replace the "/" by the heap
                         % in the numerator heap (entire one)
                         sub_indcs = indcs(find(this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
-                        
                         % overwrite heap
                         this.moveChildUp(i, sub_indcs);
-%                         % find indices that will become NaN temporary
-%                         removed_indcs = this.findExtendedIndicesToEnd(i/2);
-%                         
-%                         % find extending limit of the first child
-%                         [~, extend_limit] = this.findExtendedLevelAndLimit(i);
-%                        
-%                         % find indcs that will be overwritten by the moving
-%                         % up heap
-%                         replaced_indcs = this.findExtendedIndices(i/2, extend_limit);
-%                         moving_up_heap_inds = this.findExtendedIndicesToEnd(i);
-%                         
-%                         % store the heaps that are moving up before clearing the heaps
-%                         moving_up_heaps = this.pool(moving_up_heap_inds, sub_indcs);
-%                         
-%                         % clear the heaps to the end
-%                         this.pool(removed_indcs, sub_indcs) = NaN;
-%                         
-%                         % put the moving up heaps back again
-%                         this.pool(replaced_indcs, sub_indcs) = moving_up_heaps;
-                                                                      
+                    end
+                    
+                    % if the second child is neither 1 or 0, move on the
+                    % check the first child
+                    if ~isempty(find(this.pool(i, indcs) == 0, 1))
+                        % if the numerator is exactly zero, replace the
+                        % parent by zero
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 0)); %#ok<FNDSB>
+                        % overwrite heap with zeros (we can use the general function to do that)
+                        this.moveChildUp(i, sub_indcs);
                     end
                 end
                 
+                % having parent as "*" operator
+                if ~isempty(find(this.pool(i/2, :)== 14, 1))
+                    % check if there exists any low values of
+                    % denominator or the exact zero
+                    indcs = find(this.pool(i/2, :) ==  14);
+                    
+                    % *** the following cases must not have any
+                    % intersection!!
+                    % check if there any children are zeros
+                    if ~isempty(find(this.pool(i, indcs) == 0 || this.pool(i + 1, indcs) == 0, 1))
+                        % replace the parent by zeros (this will cover five cases from eight)
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 0 || this.pool(i + 1, indcs) == 0)); %#ok<FNDSB>
+                        this.replaceParentsByZeros(i, sub_indcs)
+                    end
+                    % check if both childran are ones
+                    if ~isempty(find(this.pool(i, indcs) == 1 && this.pool(i + 1, indcs) == 1, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
+                        this.replaceParentsByOnes(i, sub_indcs)
+                    end
+                    % check if the first child is one while the second
+                    % child is not one and not zeros (to prevent repeating the first case operation)
+                    if ~isempty(find(this.pool(i, indcs) == 1 && this.pool(i + 1, indcs) ~= 1 && this.pool(i + 1, indcs) ~= 0, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
+                        this.moveChildUp(i, sub_indcs)
+                    end
+                    % same idea as the case above
+                    if ~isempty(find(this.pool(i, indcs) ~= 1 && this.pool(i + 1, indcs) == 1 && this.pool(i, indcs) ~= 0, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
+                        this.moveChildUp(i + 1, sub_indcs)
+                    end
+                    
+                end            
             end
         end
         
-        function moveChildUp(this, first_child_indx, col_indcs)
+        function replaceParentsByZeros(this, child_indx, col_indcs)
             % Move the entire heap under i branch to i/2 branch (remove brach under i+1)
             % find indices that will become NaN temporary
+            if mod(child_indx, 2) == 0
+                first_child_indx = child_indx;
+            else
+                first_child_indx = child_indx - 1;
+            end
+            removed_indcs = this.findExtendedIndicesToEnd(first_child_indx/2);
+            % clear the heaps to the end
+            this.pool(removed_indcs, col_indcs) = NaN;
+            % put the zero at the parent
+            this.pool(first_child_indx/2, col_indcs) = 0;
+        end
+        
+        function replaceParentsByOnes(this, child_indx, col_indcs)
+            % Move the entire heap under i branch to i/2 branch (remove brach under i+1)
+            % find indices that will become NaN temporary
+            if mod(child_indx, 2) == 0
+                first_child_indx = child_indx;
+            else
+                first_child_indx = child_indx - 1;
+            end
+            removed_indcs = this.findExtendedIndicesToEnd(first_child_indx/2);
+            % clear the heaps to the end
+            this.pool(removed_indcs, col_indcs) = NaN;
+            % put the zero at the parent
+            this.pool(first_child_indx/2, col_indcs) = 1;
+        end
+        
+        function moveChildUp(this, child_indx, col_indcs)
+            % Move the entire heap under i branch to i/2 branch (remove brach under i+1)
+            % find indices that will become NaN temporary
+            if mod(child_indx, 2) == 0
+                first_child_indx = child_indx;
+            else
+                first_child_indx = child_indx - 1;
+            end
+            
             removed_indcs = this.findExtendedIndicesToEnd(first_child_indx/2);
             
-            % find extending limit of the first child
-            [~, extend_limit] = this.findExtendedLevelAndLimit(first_child_indx);
+            % find extending limit of the child
+            [~, extend_limit] = this.findExtendedLevelAndLimit(child_indx);
             
             % find indcs that will be overwritten by the moving
             % up heap
             replaced_indcs = this.findExtendedIndices(first_child_indx/2, extend_limit);
-            moving_up_heap_inds = this.findExtendedIndicesToEnd(first_child_indx);
+            moving_up_heap_inds = this.findExtendedIndicesToEnd(child_indx);
             
             % store the heaps that are moving up before clearing the heaps
             moving_up_heaps = this.pool(moving_up_heap_inds, col_indcs);
