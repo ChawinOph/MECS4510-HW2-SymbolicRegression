@@ -355,26 +355,34 @@ classdef GA_SymbReg < handle
                              this.pool(i, subsub_indcs) = NaN;
                              this.pool(i + 1, subsub_indcs) = NaN;
                          end                                                 
-                     end
-                 end 
-                 % after simplification on the variable/constant level 
-                 % , which created 1,0 in the heaps, we have to simplify
-                 % everything again based on each kind of operators
+                     end                  
+                   
+                 end
                  
-                 % "/" sign
-%                  if ~isempty(find(this.pool(i + 1, this.pool(i/2, :) == 13)) == 1, 1))
-%                      % check if there exists any low values of
-%                      % denominator or the exact zero
-%                      simp_columns = abs(this.pool(i, this.pool(i/2, :) == 13)./this.pool(i + 1, this.pool(i/2, :) == 13)) == 1;
-%                      % change the parent to simplified values
-%                      this.pool(i/2, simp_columns) = 1;
-%                      % remove the children
-%                      this.pool(i, simp_columns) = NaN;
-%                      this.pool(i + 1, simp_columns) = NaN;
-%                  end      
-                                 
+%                  if ~isempty(find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10), 1))
+%                      if the children are not pure variables/ pure constants
+%                      we have to look at cases where a particular
+%                      operator has a 1 of 0 child
+
+%                      having parent as "/" operator
+                     if ~isempty(find(this.pool(i/2, :)== 13, 1))
+                         % check if there exists any low values of
+                         % denominator or the exact zero
+                         indcs = find(this.pool(i/2, :) ==  13);
+                         if ~isempty(find(abs(this.pool(i + 1, indcs)) < denom_threshold ,1)) 
+                             % if the denominator is too small, replace by
+                             % a random constant
+                             sub_indcs = indcs(find(abs(this.pool(i + 1, indcs)) < denom_threshold)); %#ok<FNDSB>
+                             this.pool(i + 1, sub_indcs) = 20*rand(size(sub_indcs)) - 10;
+                         end
+                        
+
+                         
+                     end                   
+                     
             end
             
+            % Evaluate the function constructed from each heap
             this.y_mat = zeros(length(this.points), this.n_pop);
             for n = 1: length(this.points)                 
                 m = this.pool;
