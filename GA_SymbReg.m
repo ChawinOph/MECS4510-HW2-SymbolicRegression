@@ -154,7 +154,7 @@ classdef GA_SymbReg < handle
                         % put the stored swapped heaps into the other
                         % parent
                         parents(replaced_heap_inds_parent1, 1) = swapped_heap_from_parent2;
-                        parents(replaced_heap_inds_parent2, 2) = swapped_heap_from_parent1;                       
+                        parents(replaced_heap_inds_parent2, 2) = swapped_heap_from_parent1;
                     end
                     
                     if rand <= this.p_m
@@ -183,7 +183,7 @@ classdef GA_SymbReg < handle
                 this.fitness_hist(1 + this.n_pop*(n - 1): this.n_pop*n, :) = repmat(fval, this.n_pop, 1);
                 this.fitness_hist_gen(n, :) = fval;
                 this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
-                this.fittest_gen(n) = min(this.fitness);                
+                this.fittest_gen(n) = min(this.fitness);
             end
         end
         
@@ -329,45 +329,73 @@ classdef GA_SymbReg < handle
             for i = 2^(this.n_heap) - 2 : - 2 :1
                 % check if both children are both variables x or both
                 % contants
-%                 if ~isempty(find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10), 1))
-%                     indcs = find((this.pool(i, :) == 20 & this.pool(i + 1, :) == 20) | (this.pool(i, :) <= 10 & this.pool(i + 1, :) <= 10));
-%                     % if the parent is the minus operator
-%                     if ~isempty(find(this.pool(i/2, indcs) == 12, 1)) % check if there are any "-"
-%                         sub_indcs = indcs(this.pool(i/2, indcs) == 12);
-%                         if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
-%                             % if there exists some columns that the have
-%                             % absolute values under threshold
-%                             subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
-%                             % change the parent to simplified values
-%                             this.pool(i/2, subsub_indcs) = 0;
-%                             % remove the children
-%                             this.pool(i, subsub_indcs) = NaN;
-%                             this.pool(i + 1, subsub_indcs) = NaN;
-%                         end
-%                     end
-%                     
-%                     % if the parent is the divide operator
-%                     if ~isempty(find(this.pool(i/2, indcs) == 13, 1)) % check if there are any "/"
-%                         sub_indcs = indcs(this.pool(i/2, indcs) == 13);
-%                         if ~isempty(find(abs(this.pool(i, sub_indcs )./this.pool(i + 1, sub_indcs )) == 1, 1))
-%                             % if there exists some columns that the have
-%                             % value of one because of the same values being
-%                             % divide
-%                             subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs)./this.pool(i + 1, sub_indcs) == 1)); %#ok<FNDSB>
-%                             % change the parent to simplified values
-%                             this.pool(i/2, subsub_indcs) = 1;
-%                             % remove the children
-%                             this.pool(i, subsub_indcs) = NaN;
-%                             this.pool(i + 1, subsub_indcs) = NaN;
-%                         end
-%                     end
-%                     
-%                 end
+                % having parent as "+" operator
+                if ~isempty(find(this.pool(i/2, :)== 11, 1))
+                    indcs = find(this.pool(i/2, :) ==  11);
+                    % check if there are any chilrdren that are zeros
+                    if ~isempty(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0, 1))
+                        % replace the parent by the non-zero
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0)); %#ok<FNDSB>
+                        if ~isempty(find(this.pool(i, sub_indcs) == 0 & this.pool(i + 1, sub_indcs) ~= 0, 1))
+                            % case 1: only first child is zero, move the
+                            % second child up
+                            subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs) == 0 & this.pool(i + 1, sub_indcs) ~= 0));  %#ok<FNDSB>
+                            this.moveChildUp(i + 1, subsub_indcs)
+                        end
+                        if ~isempty(find(this.pool(i, sub_indcs) ~= 0 & this.pool(i + 1, sub_indcs) == 0, 1))
+                            % case 2: only second child is zero move the
+                            % first child up
+                            subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs) ~= 0 & this.pool(i + 1, sub_indcs) == 0));  %#ok<FNDSB>
+                            this.moveChildUp(i, subsub_indcs)
+                        end
+                        if ~isempty(find(this.pool(i, sub_indcs) == 0 & this.pool(i + 1, sub_indcs) == 0, 1))
+                            % case 3: both children are zeros
+                            subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs) == 0 & this.pool(i + 1, sub_indcs) == 0));  %#ok<FNDSB>
+                            this.replaceParentsByZeros(i, subsub_indcs)
+                        end
+                    end
+                end
+                
+                % haveing parent as "-" operator
+                if ~isempty(find(this.pool(i/2, :)== 12, 1))
+                    indcs = find(this.pool(i/2, :) ==  12);
+                    % check if there are any indices that contain only
+                    % 2 constants or 2 variables (x)
+                    if ~isempty(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
+                        sub_indcs = indcs(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>                      
+                        if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
+                            % if there exists some columns that the have
+                            % absolute values under threshold
+                            subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
+                            % change the parent to zero
+                            this.replaceParentsByZeros(i, subsub_indcs)
+                        end                                                     
+                    end
+                    % check if there are any indices that have zero second
+                    % child (0 - 0 is already taken care of in the previous case)
+                    if ~isempty(find(this.pool(i + 1, indcs) == 0, 1))
+                        sub_indcs = indcs(find(this.pool(i + 1, indcs) == 0)); %#ok<FNDSB>
+                        this.moveChildUp(i, sub_indcs);
+                    end
+                end
+                
                 % having parent as "/" operator
                 if ~isempty(find(this.pool(i/2, :)== 13, 1))
-                    % check if there exists any low values of
-                    % denominator or the exact zero
                     indcs = find(this.pool(i/2, :) ==  13);
+                    if ~isempty(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
+                        % check if there exists any low values of
+                        % denominator or the exact zero
+                        sub_indcs = indcs(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
+                        if ~isempty(find(abs(this.pool(i, sub_indcs )./this.pool(i + 1, sub_indcs )) == 1, 1))
+                            % if there exists some columns that the have
+                            % value of one because of the same constant values being
+                            % divide or x/x
+                            subsub_indcs = sub_indcs(find(this.pool(i, sub_indcs)./this.pool(i + 1, sub_indcs) == 1)); %#ok<FNDSB>
+                            % change the parent to simplified values
+                            this.replaceParentsByOnes(i, subsub_indcs)
+                        end
+                    end
+                    % check if there exists any amall constant denominator
                     if ~isempty(find(abs(this.pool(i + 1, indcs)) < denom_threshold ,1))
                         % if the denominator is too small, replace by
                         % a random constant
@@ -382,15 +410,13 @@ classdef GA_SymbReg < handle
                         % overwrite heap
                         this.moveChildUp(i, sub_indcs);
                     end
-                    
-                    % if the second child is neither 1 or 0, move on the
-                    % check the first child
+                    % check if there exists the first child = 0
                     if ~isempty(find(this.pool(i, indcs) == 0, 1))
                         % if the numerator is exactly zero, replace the
                         % parent by zero
                         sub_indcs = indcs(find(this.pool(i, indcs) == 0)); %#ok<FNDSB>
                         % overwrite heap with zeros (we can use the general function to do that)
-                        this.moveChildUp(i, sub_indcs);
+                        this.replaceParentsByZeros(i, sub_indcs);
                     end
                 end
                 
@@ -398,34 +424,34 @@ classdef GA_SymbReg < handle
                 if ~isempty(find(this.pool(i/2, :)== 14, 1))
                     % check if there exists any low values of
                     % denominator or the exact zero
-                    indcs = find(this.pool(i/2, :) ==  14);
-                    
+                    indcs = find(this.pool(i/2, :) ==  14);                    
                     % *** the following cases must not have any
-                    % intersection!!
+                    % intersections!!
                     % check if there any children are zeros
-                    if ~isempty(find(this.pool(i, indcs) == 0 || this.pool(i + 1, indcs) == 0, 1))
+                    if ~isempty(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0, 1))
                         % replace the parent by zeros (this will cover five cases from eight)
-                        sub_indcs = indcs(find(this.pool(i, indcs) == 0 || this.pool(i + 1, indcs) == 0)); %#ok<FNDSB>
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0)); %#ok<FNDSB>
                         this.replaceParentsByZeros(i, sub_indcs)
                     end
                     % check if both childran are ones
-                    if ~isempty(find(this.pool(i, indcs) == 1 && this.pool(i + 1, indcs) == 1, 1))
-                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
+                    if ~isempty(find(this.pool(i, indcs) == 1 & this.pool(i + 1, indcs) == 1, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 & this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
                         this.replaceParentsByOnes(i, sub_indcs)
                     end
                     % check if the first child is one while the second
                     % child is not one and not zeros (to prevent repeating the first case operation)
-                    if ~isempty(find(this.pool(i, indcs) == 1 && this.pool(i + 1, indcs) ~= 1 && this.pool(i + 1, indcs) ~= 0, 1))
-                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
-                        this.moveChildUp(i, sub_indcs)
-                    end
-                    % same idea as the case above
-                    if ~isempty(find(this.pool(i, indcs) ~= 1 && this.pool(i + 1, indcs) == 1 && this.pool(i, indcs) ~= 0, 1))
-                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 || this.pool(i + 1, indcs) == 1)); %#ok<FNDSB>
+                    % move the second child up
+                    if ~isempty(find(this.pool(i, indcs) == 1 & this.pool(i + 1, indcs) ~= 1 & this.pool(i + 1, indcs) ~= 0, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) == 1 & this.pool(i + 1, indcs) ~= 1 & this.pool(i + 1, indcs) ~= 0)); %#ok<FNDSB>
                         this.moveChildUp(i + 1, sub_indcs)
                     end
+                    % same idea as the case above
+                    if ~isempty(find(this.pool(i, indcs) ~= 1 & this.pool(i + 1, indcs) == 1 & this.pool(i, indcs) ~= 0, 1))
+                        sub_indcs = indcs(find(this.pool(i, indcs) ~= 1 & this.pool(i + 1, indcs) == 1 & this.pool(i, indcs) ~= 0)); %#ok<FNDSB>
+                        this.moveChildUp(i, sub_indcs)
+                    end
                     
-                end            
+                end
             end
         end
         
