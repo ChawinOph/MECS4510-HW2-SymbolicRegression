@@ -18,7 +18,7 @@ trunc_rate = 1;
 n_tour = 2;
 p_tour = 0.90;
 
-GP_var1 = cell(8,1);
+GP_var1 = cell(5,1);
 % store best fitness value for each run
 GP_var1_bestfitness = nan(length(GP_var1) ,1);
 % cell array that store expressions
@@ -46,10 +46,12 @@ GP_var1_best_run_express = GP_var1_best_express{best_run_indx};
 figure;
 GP_var1{best_run_indx}.plotXYScatter; hold on;
 GP_var1{best_run_indx}.plotFittest; 
+title('Dataset (down sampled) and Best Fit Curve', 'interpreter', 'latex')
+leg = legend('Dataset', 'Best Fit Curve'); set(leg,'Interpreter','latex')
 
-x = 0:0.1:10;
-y = sin(1.5.*x)./(0.5.*x + 1);
-plot(x,y)
+% x = 0:0.1:10;
+% y = sin(1.5.*x)./(0.5.*x + 1);
+% plot(x,y)
 
 figure;
 GP_var1{best_run_indx}.plotDot; 
@@ -59,7 +61,7 @@ ylabel('Mean Absolute Error', 'interpreter', 'latex');
 
 avg_GP_var1 = mean(GP_var1_fittess_hist);
 SEM_GP_var1 = std(GP_var1_fittess_hist)/sqrt(size(GP_var1_fittess_hist, 1));
-bar_freq = n_eval/20;
+bar_freq = n_eval/10;
 
 save('Results\avg_GP_var1.mat','avg_GP_var1');
 save('Results\SEM_GP_var1.mat','SEM_GP_var1');

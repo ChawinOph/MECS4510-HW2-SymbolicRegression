@@ -727,8 +727,9 @@ classdef GP_SymbReg < handle
             p = scatter(this.points(:,1), this.points(:,2));
             p.Marker = '.';
             p.MarkerEdgeColor = 'k';
-            xlabel('X');
-            ylabel('Y');
+            p.LineWidth = 5;
+            xlabel('X','interpreter', 'latex');
+            ylabel('Y','interpreter', 'latex');
             grid on;
             grid minor;
             if nargin > 1 && b_hold
@@ -738,7 +739,7 @@ classdef GP_SymbReg < handle
         
         function plotFittest(this)
             [~, fittest_indx] = min(this.fitness);
-            plot(this.points(:,1), this.y_mat(:, fittest_indx));
+            plot(this.points(:,1), this.y_mat(:, fittest_indx), 'LineWidth', 1, 'color', 'b');
         end
         
         function expression = updateFittestExpression(this)
@@ -772,7 +773,7 @@ classdef GP_SymbReg < handle
             % Dot plot
             gens = reshape(repmat(1: this.n_gen, this.n_pop, 1), [], 1);
             scat1 = scatter(gens, reshape(this.fitness_hist_gen', [], 1));
-            ylim([0 0.5]);
+            ylim([0 0.25]);
             scat1.Marker = '.';
             scat1.MarkerEdgeColor = 'b';
         end
