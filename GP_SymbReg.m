@@ -1,4 +1,4 @@
-classdef GA_SymbReg < handle
+classdef GP_SymbReg < handle
     % SimpleGA Summary of this class goes here
     %   This class is designed for a TSP
     properties
@@ -31,11 +31,12 @@ classdef GA_SymbReg < handle
         fittest             % n_eval x 1 :  array of best fitness value of each eval
         fittest_gen         % n_gen x 1 :  array of best fitness value of each gen
         fittest_indv        % The current fittest individual in the pool
+        best_express        % string of the best expression
     end
     
     methods
         %% Constructor
-        function this = GA_SymbReg(filename, down_sample_no, n_pop, n_heap, ...
+        function this = GP_SymbReg(filename, down_sample_no, n_pop, n_heap, ...
                 p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour, n_elite, trunc_rate)
             this.filename = filename;
             this.down_sample_no = down_sample_no;
@@ -71,7 +72,7 @@ classdef GA_SymbReg < handle
                 % create a new array of offspring
                 %                 offspring = nan*ones(2^this.n_heap - 1, this.n_pop);
                 offspring = [];
-                
+%                 [ ~ ,sorted_fitness_pop_indcs] = sort(this.fitness);
                 for i = 1 : ceil((this.n_pop - this.n_elite)/2)
                     % Tournament selection
                     % Randomly Select (uniform) parent candidates and osrt by fitness
@@ -80,7 +81,10 @@ classdef GA_SymbReg < handle
                     for n_round = 1:2 % run through two rounds of tournaments to get two winning parents
                         cand_parent_indcs = randperm(this.n_pop, 2);
                         [~, sorted_cand_indcs] = sort(this.fitness(cand_parent_indcs));
-                        if rand <= this.p_tour
+%                         p_tour_relax = 1 - sorted_fitness(1)/sum(sorted_fitness);
+                        p_tour_current = this.p_tour;
+%                         p_tour_current = p_tour_relax;
+                        if rand <= p_tour_current
                             % choose the fitter on
                             parents(:, n_round) = this.pool(:, cand_parent_indcs(sorted_cand_indcs(1)));
                         else
@@ -166,7 +170,6 @@ classdef GA_SymbReg < handle
                         mutated_indcs1 = heap_indcs_parent1(randperm(length(heap_indcs_parent1), this.n_mutation));
                         mutated_indcs2 = heap_indcs_parent2(randperm(length(heap_indcs_parent2), this.n_mutation));
                         inc = 0.5;
-                        
                         % iterate through number of mutation points on each
                         % parent
                         for n_mute = 1:this.n_mutation
@@ -207,8 +210,7 @@ classdef GA_SymbReg < handle
                             
                         end
                         parents(mutated_indcs1, 1) = muted_heaps;
-                        
-                        
+                                              
                         % iterate through number of mutation points on each
                         % parent
                         for n_mute = 1:this.n_mutation
@@ -262,7 +264,6 @@ classdef GA_SymbReg < handle
                 % Add elites in the current generation to the current genes
                 [~, sorted_fitness_indcs] = sort(this.fitness);
                 offspring = [offspring, this.pool(: , sorted_fitness_indcs(1:this.n_elite))]; %#ok<AGROW>
-                
                 this.pool = offspring;
                 this.simplify();
                 fval = this.updateFitness();
@@ -419,20 +420,22 @@ classdef GA_SymbReg < handle
                 % having parent as "+" operator
                 if ~isempty(find(this.pool(i/2, :)== 11, 1))
                     indcs = find(this.pool(i/2, :) ==  11);
-                    % sum the constants
+                   
+%                     % sum the constants
 %                     if ~isempty(find((this.pool(i, indcs) ~= 0 & this.pool(i + 1, indcs) ~= 0) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
 %                         sub_indcs = indcs(find((this.pool(i, indcs) ~= 0 & this.pool(i + 1, indcs) ~= 0) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
 %                         this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) + this.pool(i + 1, sub_indcs));
 %                         % check the limits
 %                         if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
-%                             coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
-%                             this.pool(i/2, coreecting_indcs) = 10;
+%                             corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
+%                             this.pool(i/2, corecting_indcs) = 10;
 %                         end
 %                         if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
-%                             coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
-%                             this.pool(i/2, coreecting_indcs) = -10;
+%                             corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
+%                             this.pool(i/2, corecting_indcs) = -10;
 %                         end
 %                     end
+                    
                     % check if there are any chilrdren that are zeros
                     if ~isempty(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0, 1))
                         % replace the parent by the non-zero
@@ -471,21 +474,23 @@ classdef GA_SymbReg < handle
                             % change the parent to zero
                             this.replaceParentsByZeros(i, subsub_indcs)
                         end
-                        % if thet are simply constant
+                        
+%                         if thet are simply constants
 %                         if ~isempty(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
 %                             sub_indcs = indcs(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
 %                             this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs));
 %                             % check the limits
 %                             if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
-%                                 coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
-%                                 this.pool(i/2, coreecting_indcs) = 10;
+%                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
+%                                 this.pool(i/2, corecting_indcs) = 10;
 %                             end
 %                             if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
-%                                 coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
-%                                 this.pool(i/2, coreecting_indcs) = -10;
+%                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
+%                                 this.pool(i/2, corecting_indcs) = -10;
 %                             end
 %                         end
-                    end
+                        
+                        end
                     % check if there are any indices that have zero second
                     % child (0 - 0 is already taken care of in the previous case)
                     if ~isempty(find(this.pool(i + 1, indcs) == 0, 1))
@@ -730,15 +735,38 @@ classdef GA_SymbReg < handle
             plot(this.points(:,1), this.y_mat(:, fittest_indx));
         end
         
-        function showSymbol(this)
-            
+        function expression = updateFittestExpression(this)
+            express = cell(2^(this.n_heap) - 1, 1);
+            operators = {'+', '-', '/', '*', 'sin', 'cos'};
+            for  i = 2^(this.n_heap) - 2 : - 2 :1
+               % check if in the current heap level has any constants or
+               % variables
+               if this.fittest_indv(i) <= 10
+                   express{i} = num2str(this.fittest_indv(i));
+               elseif  this.fittest_indv(i) == 20 
+                   express{i} = 'x';
+               end
+               if this.fittest_indv(i + 1) <= 10
+                   express{i + 1} = num2str(this.fittest_indv(i + 1));
+               elseif  this.fittest_indv(i + 1) == 20 
+                   express{i + 1} = 'x';
+               end
+               % check operators of the parent
+               if this.fittest_indv(i/2) >= 11 && this.fittest_indv(i/2) <= 14
+                   express{i/2} = ['( ', express{i}, ' ', operators{this.fittest_indv(i/2) - 10}, ' ', express{i + 1}, ' )'];
+               elseif this.fittest_indv(i/2) >= 15 && this.fittest_indv(i/2) <= 16
+                   express{i/2} = [operators{this.fittest_indv(i/2) - 10}, '( ', express{i}, ' )'];  
+               end
+            end
+            expression = express{1};
+            this.best_express  = express{1};
         end
         
         function plotDot(this)
             % Dot plot
             gens = reshape(repmat(1: this.n_gen, this.n_pop, 1), [], 1);
             scat1 = scatter(gens, reshape(this.fitness_hist_gen', [], 1));
-            ylim([0 1]);
+            ylim([0 0.5]);
             scat1.Marker = '.';
             scat1.MarkerEdgeColor = 'b';
         end
