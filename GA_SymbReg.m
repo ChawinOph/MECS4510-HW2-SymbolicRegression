@@ -159,9 +159,95 @@ classdef GA_SymbReg < handle
                     
                     if rand <= this.p_m
                         % mutate the parents
-                        
                         % change constants by small amount
                         % swap operators
+                        heap_indcs_parent1 = find(~isnan(parents(:, 1)));
+                        heap_indcs_parent2 = find(~isnan(parents(:, 2)));
+                        mutated_indcs1 = heap_indcs_parent1(randperm(length(heap_indcs_parent1), this.n_mutation));
+                        mutated_indcs2 = heap_indcs_parent2(randperm(length(heap_indcs_parent2), this.n_mutation));
+                        inc = 0.5;
+                        
+                        % iterate through number of mutation points on each
+                        % parent
+                        for n_mute = 1:this.n_mutation
+                            muted_heaps = zeros(size(mutated_indcs1));
+                            current_operator = parents(mutated_indcs1(n_mute), 1);
+                            if current_operator == 11
+                                other_operators = [12, 13, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 12
+                                other_operators = [11, 13, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 13
+                                other_operators = [11, 12, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 14
+                                other_operators = [11, 12, 13];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 15
+                                muted_heaps(n_mute) = 16;
+                            elseif current_operator == 16
+                                muted_heaps(n_mute) = 15;
+                            elseif current_operator < 10
+                                % change the constant value +/- at the same
+                                % chance (50/50)
+                                if rand > 0.5
+                                    muted_heaps(n_mute) = current_operator + inc;
+                                else
+                                    muted_heaps(n_mute) = current_operator - inc;
+                                end
+                                % check if the new value has exceeded the
+                                % limits or not
+                                if  muted_heaps(n_mute) > 10
+                                    muted_heaps(n_mute) = 10;
+                                elseif  muted_heaps(n_mute) < -10
+                                    muted_heaps(n_mute) = -10;
+                                end
+                            end
+                            
+                        end
+                        parents(mutated_indcs1, 1) = muted_heaps;
+                        
+                        
+                        % iterate through number of mutation points on each
+                        % parent
+                        for n_mute = 1:this.n_mutation
+                            muted_heaps = zeros(size(mutated_indcs2));
+                            current_operator = parents(mutated_indcs2(n_mute), 2);
+                            if current_operator == 11
+                                other_operators = [12, 13, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 12
+                                other_operators = [11, 13, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 13
+                                other_operators = [11, 12, 14];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 14
+                                other_operators = [11, 12, 13];
+                                muted_heaps(n_mute) = other_operators(randi(length(other_operators)));
+                            elseif current_operator == 15
+                                muted_heaps(n_mute) = 16;
+                            elseif current_operator == 16
+                                muted_heaps(n_mute) = 15;
+                            elseif current_operator < 10
+                                % change the constant value +/- at the same
+                                % chance (50/50)
+                                if rand > 0.5
+                                    muted_heaps(n_mute) = current_operator + inc;
+                                else
+                                    muted_heaps(n_mute) = current_operator - inc;
+                                end
+                                % check if the new value has exceeded the
+                                % limits or not
+                                if  muted_heaps(n_mute) > 10
+                                    muted_heaps(n_mute) = 10;
+                                elseif  muted_heaps(n_mute) < -10
+                                    muted_heaps(n_mute) = -10;
+                                end
+                            end
+                        end
+                        parents(mutated_indcs2, 2) = muted_heaps;                      
                     end
                     
                     offspring  = [offspring, parents]; %#ok<AGROW>
@@ -227,6 +313,7 @@ classdef GA_SymbReg < handle
                 extended_level = max([extended_level, current_remain_lvl],[],2);
             end
         end
+        
         
         function extended_indcs = findExtendedIndicesToEnd(this, start_index)
             lvl_thresholds = 2.^(1 : this.n_heap) - 1;
@@ -332,6 +419,20 @@ classdef GA_SymbReg < handle
                 % having parent as "+" operator
                 if ~isempty(find(this.pool(i/2, :)== 11, 1))
                     indcs = find(this.pool(i/2, :) ==  11);
+                    % sum the constants
+%                     if ~isempty(find((this.pool(i, indcs) ~= 0 & this.pool(i + 1, indcs) ~= 0) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
+%                         sub_indcs = indcs(find((this.pool(i, indcs) ~= 0 & this.pool(i + 1, indcs) ~= 0) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
+%                         this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) + this.pool(i + 1, sub_indcs));
+%                         % check the limits
+%                         if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
+%                             coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
+%                             this.pool(i/2, coreecting_indcs) = 10;
+%                         end
+%                         if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
+%                             coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
+%                             this.pool(i/2, coreecting_indcs) = -10;
+%                         end
+%                     end
                     % check if there are any chilrdren that are zeros
                     if ~isempty(find(this.pool(i, indcs) == 0 | this.pool(i + 1, indcs) == 0, 1))
                         % replace the parent by the non-zero
@@ -362,14 +463,28 @@ classdef GA_SymbReg < handle
                     % check if there are any indices that contain only
                     % 2 constants or 2 variables (x)
                     if ~isempty(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
-                        sub_indcs = indcs(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>                      
+                        sub_indcs = indcs(find((this.pool(i, indcs) == 20 & this.pool(i + 1, indcs) == 20) | (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
                         if ~isempty(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold, 1))
                             % if there exists some columns that the have
                             % absolute values under threshold
                             subsub_indcs = sub_indcs(find(abs(this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs)) < min_threshold)); %#ok<FNDSB>
                             % change the parent to zero
                             this.replaceParentsByZeros(i, subsub_indcs)
-                        end                                                     
+                        end
+                        % if thet are simply constant
+%                         if ~isempty(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
+%                             sub_indcs = indcs(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
+%                             this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs));
+%                             % check the limits
+%                             if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
+%                                 coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
+%                                 this.pool(i/2, coreecting_indcs) = 10;
+%                             end
+%                             if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
+%                                 coreecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
+%                                 this.pool(i/2, coreecting_indcs) = -10;
+%                             end
+%                         end
                     end
                     % check if there are any indices that have zero second
                     % child (0 - 0 is already taken care of in the previous case)
@@ -424,7 +539,7 @@ classdef GA_SymbReg < handle
                 if ~isempty(find(this.pool(i/2, :)== 14, 1))
                     % check if there exists any low values of
                     % denominator or the exact zero
-                    indcs = find(this.pool(i/2, :) ==  14);                    
+                    indcs = find(this.pool(i/2, :) ==  14);
                     % *** the following cases must not have any
                     % intersections!!
                     % check if there any children are zeros
@@ -452,6 +567,25 @@ classdef GA_SymbReg < handle
                     end
                     
                 end
+                
+                % having parents as "sin" operator
+                if ~isempty(find(this.pool(i/2, :)== 15, 1))
+                    indcs = find(this.pool(i/2, :) ==  15);
+                    if ~isempty(find(this.pool(i, indcs) <= 10, 1)) 
+                        sub_indcs = indcs(find(this.pool(i, indcs) <= 10));  %#ok<FNDSB>
+                        this.replaceParentsByArraysofConstants(i, sub_indcs, sin(this.pool(i, sub_indcs)))
+                    end
+                end
+                
+                % having parents as "cos" operator
+                if ~isempty(find(this.pool(i/2, :)== 16, 1))
+                    indcs = find(this.pool(i/2, :) ==  16);
+                    if ~isempty(find(this.pool(i, indcs) <= 10, 1)) 
+                        sub_indcs = indcs(find(this.pool(i, indcs) <= 10));  %#ok<FNDSB>
+                        replaceParentsByArraysofConstants(this, i, sub_indcs, cos(this.pool(i, sub_indcs)))
+                    end
+                end
+                
             end
         end
         
@@ -483,6 +617,21 @@ classdef GA_SymbReg < handle
             this.pool(removed_indcs, col_indcs) = NaN;
             % put the zero at the parent
             this.pool(first_child_indx/2, col_indcs) = 1;
+        end
+        
+        function replaceParentsByArraysofConstants(this, child_indx, col_indcs, array)
+            % Move the entire heap under i branch to i/2 branch (remove brach under i+1)
+            % find indices that will become NaN temporary
+            if mod(child_indx, 2) == 0
+                first_child_indx = child_indx;
+            else
+                first_child_indx = child_indx - 1;
+            end
+            removed_indcs = this.findExtendedIndicesToEnd(first_child_indx/2);
+            % clear the heaps to the end
+            this.pool(removed_indcs, col_indcs) = NaN;
+            % put the zero at the parent
+            this.pool(first_child_indx/2, col_indcs) = array;
         end
         
         function moveChildUp(this, child_indx, col_indcs)

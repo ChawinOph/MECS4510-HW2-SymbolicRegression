@@ -4,14 +4,14 @@ close all;
 clear;
 %% GA
 
-down_sample_no = 10;
+down_sample_no = 5;
 n_heap = 5; % or 4?
 n_pop = 250;
 p_c = 0.95; 
-p_m = 0.01;
+p_m = 0.1;
 n_crossover = 2;
 n_mutation = 1;
-n_eval = 1e5;
+n_eval = 2e5;
 n_elite = 1;
 trunc_rate = 1/2;
 
