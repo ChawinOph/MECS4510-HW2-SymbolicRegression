@@ -32,6 +32,8 @@ classdef GP_SymbReg < handle
         fittest_gen         % n_gen x 1 :  array of best fitness value of each gen
         fittest_indv        % The current fittest individual in the pool
         best_express        % string of the best expression
+        n_eval_stop         % n_eval at which the GP reach the best fitness value 
+        best_fitness        % best fitness value
     end
     
     methods
@@ -169,6 +171,7 @@ classdef GP_SymbReg < handle
                         heap_indcs_parent2 = find(~isnan(parents(:, 2)));
                         mutated_indcs1 = heap_indcs_parent1(randperm(length(heap_indcs_parent1), this.n_mutation));
                         mutated_indcs2 = heap_indcs_parent2(randperm(length(heap_indcs_parent2), this.n_mutation));
+                        % random the increment in mutation
                         inc = 0.5;
                         % iterate through number of mutation points on each
                         % parent
@@ -272,6 +275,9 @@ classdef GP_SymbReg < handle
                 this.fittest(1 + this.n_pop*(n - 1): this.n_pop*n) = min(this.fitness)*ones(this.n_pop, 1);
                 this.fittest_gen(n) = min(this.fitness);
             end
+            this.updateFittestExpression();
+            this.n_eval_stop = find(min(this.fittest) == this.fittest, 1) + this.n_pop - 1;
+            this.best_fitness = min(this.fittest);
         end
         
         function extended_indcs = findExtendedIndices(~, start_index, no_extended_level)
