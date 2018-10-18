@@ -67,6 +67,87 @@ classdef GP_SymbReg < handle
         end
         
         %% Member Functions
+        %% RS
+        function random_search(this)
+            this.fittest_gen = zeros(this.n_gen, 1);
+            this.fittest_gen(1) = this.updateFitness();
+            while isnan(this.fittest_gen(1))
+                this.pool = this.contructHeaps();
+                this.fittest_gen(1) = this.updateFitness();
+            end
+            for n = 2: this.n_gen
+                this.pool = this.contructHeaps();
+                fval = this.updateFitness();
+                if fval > this.fittest_gen(n - 1) || isnan(fval)
+                    this.fittest_gen(n) = this.fittest_gen(n - 1);                    
+                else
+                    this.fittest_gen(n) = fval;
+                end
+            end
+            this.best_fitness = min(this.fittest_gen);
+        end
+        %% RMHC
+        function random_mutation_hill_climber(this)
+            inc = 0.1;
+            this.fittest_gen = zeros(this.n_gen, 1);
+            this.fittest_gen(1) = this.calcFitness(this.pool);
+            while isnan(this.fittest_gen(1))
+                this.pool = this.contructHeaps();
+                this.fittest_gen(1) = this.calcFitness(this.pool);
+            end
+            muted_indv = this.pool;
+            for n = 2: this.n_gen
+                % mutate the genes
+                heap_indcs_parent = find(~isnan(muted_indv));
+                mutated_indcs = heap_indcs_parent(randperm(length(heap_indcs_parent), 1));
+                muted_heap = muted_indv(mutated_indcs);
+                current_operator = muted_indv(mutated_indcs);
+                if current_operator == 11
+                    other_operators = [12, 13, 14];
+                    muted_heap = other_operators(randi(length(other_operators)));
+                elseif current_operator == 12
+                    other_operators = [11, 13, 14];
+                    muted_heap = other_operators(randi(length(other_operators)));
+                elseif current_operator == 13
+                    other_operators = [11, 12, 14];
+                    muted_heap = other_operators(randi(length(other_operators)));
+                elseif current_operator == 14
+                    other_operators = [11, 12, 13];
+                    muted_heap = other_operators(randi(length(other_operators)));
+                elseif current_operator == 15
+                    muted_heap = 16;
+                elseif current_operator == 16
+                    muted_heap = 15;
+                elseif current_operator < 10
+                    % change the constant value +/- at the same
+                    % chance (50/50)
+                    if rand > 0.5
+                        muted_heap = current_operator + inc;
+                    else
+                        muted_heap = current_operator - inc;
+                    end
+                    % check if the new value has exceeded the
+                    % limits or not
+                    if  muted_heap > 10
+                        muted_heap = 10;
+                    elseif  muted_heap < -10
+                        muted_heap = -10;
+                    end
+                end
+                
+                muted_indv(mutated_indcs) = muted_heap;
+                fval = this.calcFitness(muted_indv);
+                if fval > this.fittest_gen(n - 1) || isnan(fval)
+                    this.fittest_gen(n) = this.fittest_gen(n - 1);
+                else
+                    this.fittest_gen(n) = fval;
+                    this.pool = muted_indv;
+                end
+            end
+            this.best_fitness = min(this.fittest_gen);
+        end
+        
+        %% GP evaluation
         function evaluate(this)
             % evaluate: Perform an evaluation (evolving to get a new set of
             % n_pop offspring)
@@ -194,6 +275,8 @@ classdef GP_SymbReg < handle
                                 muted_heaps(n_mute) = 16;
                             elseif current_operator == 16
                                 muted_heaps(n_mute) = 15;
+                            elseif current_operator == 20
+                                muted_heaps(n_mute) = 20;
                             elseif current_operator < 10
                                 % change the constant value +/- at the same
                                 % chance (50/50)
@@ -235,6 +318,8 @@ classdef GP_SymbReg < handle
                                 muted_heaps(n_mute) = 16;
                             elseif current_operator == 16
                                 muted_heaps(n_mute) = 15;
+                            elseif current_operator == 20
+                                muted_heaps(n_mute) = 20;
                             elseif current_operator < 10
                                 % change the constant value +/- at the same
                                 % chance (50/50)
@@ -411,6 +496,7 @@ classdef GP_SymbReg < handle
             end
         end
         
+        
         function simplify(this)
             % simplify (may do it every other a certain number of gens)
             % snipping: replace a sub-branch with a constant (average)
@@ -481,22 +567,22 @@ classdef GP_SymbReg < handle
                             this.replaceParentsByZeros(i, subsub_indcs)
                         end
                         
-%                         if thet are simply constants
-%                         if ~isempty(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
-%                             sub_indcs = indcs(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
-%                             this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs));
-%                             % check the limits
-%                             if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
-%                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
-%                                 this.pool(i/2, corecting_indcs) = 10;
-%                             end
-%                             if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
-%                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
-%                                 this.pool(i/2, corecting_indcs) = -10;
-%                             end
-%                         end
+                        %                         if thet are simply constants
+                        %                         if ~isempty(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10), 1))
+                        %                             sub_indcs = indcs(find((this.pool(i, indcs) ~= 20 & this.pool(i + 1, indcs) ~= 20) & (this.pool(i, indcs) <= 10 & this.pool(i + 1, indcs) <= 10)));  %#ok<FNDSB>
+                        %                             this.replaceParentsByArraysofConstants(i, sub_indcs, this.pool(i, sub_indcs) - this.pool(i + 1, sub_indcs));
+                        %                             % check the limits
+                        %                             if ~isempty(find(this.pool(i/2, sub_indcs) > 10, 1))
+                        %                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) > 10)); %#ok<FNDSB>
+                        %                                 this.pool(i/2, corecting_indcs) = 10;
+                        %                             end
+                        %                             if ~isempty(find(this.pool(i/2, sub_indcs) < -10, 1))
+                        %                                 corecting_indcs = sub_indcs(find(this.pool(i/2, sub_indcs) < -10)); %#ok<FNDSB>
+                        %                                 this.pool(i/2, corecting_indcs) = -10;
+                        %                             end
+                        %                         end
                         
-                        end
+                    end
                     % check if there are any indices that have zero second
                     % child (0 - 0 is already taken care of in the previous case)
                     if ~isempty(find(this.pool(i + 1, indcs) == 0, 1))
@@ -721,9 +807,51 @@ classdef GP_SymbReg < handle
             fval = this.fitness;
         end
         
+        
+        function fval = calcFitness(this, heap)
+            % Evaluate the function constructed from each heap
+            this.y_mat = zeros(length(this.points), this.n_pop);
+            for n = 1: length(this.points)
+                m = heap;
+                m(m == 20) = this.points(n, 1);
+                
+                for i = 2^(this.n_heap) - 2 : - 2 :1
+                    if ~isempty(find(m(i/2, :) == 11, 1)) % check if there are any "+"
+                        m(i/2 , m(i/2, :) == 11) = m(i, m(i/2, :) == 11) + m(i + 1, m(i/2, :) == 11);
+                    end
+                    
+                    if ~isempty(find(m(i/2, :) == 12, 1)) % check if there are any "-"
+                        m(i/2 , m(i/2, :) == 12) = m(i, m(i/2, :) == 12) - m(i + 1, m(i/2, :) == 12);
+                    end
+                    
+                    if ~isempty(find(m(i/2, :) == 13, 1)) % check if there are any "/"
+                        m(i/2 , m(i/2, :) == 13) = m(i, m(i/2, :) == 13)./m(i + 1, m(i/2, :) == 13);
+                    end
+                    
+                    if ~isempty(find(m(i/2, :) == 14, 1)) % check if there are any "*"
+                        m(i/2 , m(i/2, :) == 14) = m(i, m(i/2, :) == 14).*m(i + 1, m(i/2, :) == 14);
+                    end
+                    
+                    if ~isempty(find(m(i/2, :) == 15, 1)) % check if there are any "sine"
+                        m(i/2 , m(i/2, :) == 15) = sin(m(i, m(i/2, :) == 15));
+                    end
+                    
+                    if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
+                        m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
+                        m([i, i + 1], m(i/2, :) == 16) = nan;
+                    end
+                    
+                end
+                this.y_mat(n, :) = m(1, :);
+            end
+            % find MAE (fitness) for each chromosome
+            this.y_func_mat = repmat(this.points(:,2), 1, this.n_pop);
+            fval = mean(abs(this.y_func_mat - this.y_mat));
+        end
+        
         %% Visualization
         function p = plotXYScatter(this, b_hold)
-            figure
+%             figure
             p = scatter(this.points(:,1), this.points(:,2));
             p.Marker = '.';
             p.MarkerEdgeColor = 'k';
