@@ -789,8 +789,7 @@ classdef GP_SymbReg < handle
                     end
                     
                     if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
-                        m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
-                        m([i, i + 1], m(i/2, :) == 16) = nan;
+                        m(i/2 , m(i/2, :) == 16) = cos(m(i, m(i/2, :) == 16));
                     end
                     
                 end
@@ -813,6 +812,7 @@ classdef GP_SymbReg < handle
             this.y_mat = zeros(length(this.points), this.n_pop);
             for n = 1: length(this.points)
                 m = heap;
+                % subsititue the x
                 m(m == 20) = this.points(n, 1);
                 
                 for i = 2^(this.n_heap) - 2 : - 2 :1
@@ -837,8 +837,7 @@ classdef GP_SymbReg < handle
                     end
                     
                     if ~isempty(find(m(i/2, :) == 16, 1)) % check if there are any "cosine"
-                        m(i/2 , m(i/2, :) == 16, :) = cos(m(i, m(i/2, :) == 16));
-                        m([i, i + 1], m(i/2, :) == 16) = nan;
+                        m(i/2 , m(i/2, :) == 16) = cos(m(i, m(i/2, :) == 16));
                     end
                     
                 end

@@ -12,7 +12,7 @@ if nargin < 4; color = 'b'; end % default color is blue
 %% Plot and fill
 linehandle = plot(X, avg, color, 'LineWidth', linewidth); hold on;
 e_handle = errorbar(X_bar, Y_bar, Error_bar);  
-set(gca,'XScale','log');
+set(gca,'YScale','log');
 
 e_handle.Marker = 'x';
 e_handle.MarkerSize = 5;

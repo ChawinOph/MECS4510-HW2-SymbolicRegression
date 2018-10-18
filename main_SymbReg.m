@@ -150,8 +150,8 @@ SEM_GP_RMHC = std(GP_RMHC_fittess_hist)/sqrt(size(GP_RMHC_fittess_hist, 1));
 
 % save('Results\avg_GP_RMHC.mat','avg_GP_RMHC');
 % save('Results\SEM_GP_RMHC.mat','SEM_GP_RMHC');
-%% Plot Learning Curves
 
+%% Plot Learning Curves
 figure;
 [p_RS, f_RS] = plotAvgSemiLogYWithErrorBar(avg_GP_RS, SEM_GP_RS, bar_freq, 'k', 1.5); hold on;
 [p_RMHC, f_RMHC] = plotAvgSemiLogYWithErrorBar(avg_GP_RMHC, SEM_GP_RMHC, bar_freq, 'm', 1.5); hold on;
@@ -169,3 +169,86 @@ legnd = legend([p_RS, p_RMHC, p_GAvar2, p_GAvar1, f_RS, f_RMHC, f_GAvar2, f_GAva
     '$\pm1\sigma_{\bar{x}}$'});
 set(legnd,'Interpreter','latex')
 legnd.NumColumns = 2;
+
+%% simpler problems tested for debugging
+% figure;
+
+% simple cosine function
+x1 = 0:0.05:10;
+y1 = cos(2.*x1);
+
+% simple linear function
+x2 = 0:0.1:10;
+y2 = 2.*x2 + 1;
+
+% simple parabolic function
+% x3 = 0:0.1:10;
+% y3 = -3*x3.*x3;
+
+down_sample_no = 1;
+n_heap = 4;
+n_pop = 100;
+p_c = 0.95;
+p_m = 0.1;
+n_crossover = 2;
+n_mutation = 1;
+n_eval = 1e4;
+n_elite = 1;
+trunc_rate = 1;
+
+GP_var1_simple_cos = GP_SymbReg([x1',y1'],down_sample_no, n_pop, n_heap,...
+    p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour, n_elite, trunc_rate);
+
+GP_var1_simple_linear = GP_SymbReg([x2',y2'],down_sample_no, n_pop, n_heap,...
+    p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour, n_elite, trunc_rate);
+
+% GP_var1_simple_para = GP_SymbReg([x3',y3'],down_sample_no, n_pop, n_heap,...
+%     p_c, p_m, n_crossover, n_mutation, n_eval, n_tour, p_tour, n_elite, trunc_rate);
+
+[~, indx] = min(GP_var1_simple_para.fitness);
+
+tic
+GP_var1_simple_cos.evaluate()
+toc
+
+tic
+GP_var1_simple_linear.evaluate()
+toc
+
+tic
+GP_var1_simple_para.evaluate()
+toc
+
+figure;
+% subplot(1,2,1);
+
+GP_var1_simple_cos().plotXYScatter; hold on;
+GP_var1_simple_cos().plotFittest;
+title('Test Function: $f_1(x) = \cos(2x)$', 'interpreter', 'latex')
+leg = legend('Data Set','Best Fit Curve');
+set(leg,'Interpreter','latex')
+
+% subplot(1,2,2);
+figure;
+GP_var1_simple_linear().plotXYScatter; hold on;
+GP_var1_simple_linear().plotFittest;
+title('Test Function: $f_2(x) = 2x + 1$', 'interpreter', 'latex')
+
+% subplot(1,3,3);
+% 
+% GP_var1_simple_para().plotXYScatter; hold on;
+% GP_var1_simple_para().plotFittest;
+% title('Test Function: $f_3(x) = -3x^2$', 'interpreter', 'latex')
+
+figure;
+plot(GP_var1_simple_cos.fittest,'Linewidth', 1.5); hold on;
+plot(GP_var1_simple_linear.fittest,'Linewidth', 1.5);
+% plot(GP_var1_simple_para.fittest,'Linewidth', 1.5);
+grid on; grid minor;  
+title('Learning Curves using GP', 'interpreter', 'latex');
+xlabel('No. of Evaluations', 'interpreter', 'latex'); 
+ylabel('Mean Absolute Error (MAE)', 'interpreter', 'latex');
+legnd = legend({'$f_1(x) = \cos(2x)$', '$f_2(x) = 2x + 1$'});
+set(legnd,'Interpreter','latex')
+set(gca,'YScale','log');
+
