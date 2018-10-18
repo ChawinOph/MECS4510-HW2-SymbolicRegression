@@ -1,4 +1,4 @@
-function [linehandle, e_handle] = plotAvgSemiLogYWithErrorBar(avg, std, freq, color, linewidth)
+function [linehandle, e_handle] = plotAvgWithErrorBar(avg, std, freq, color, linewidth)
 % plotAvgWithSD: Plot two lines between Y1 (lower) and Y2 (upper) in
 % semilog scale (return p for handling the legend selectively)
 X = 1 : size(avg, 2);
@@ -10,9 +10,8 @@ Error_bar = std(X_bar);
 if nargin < 5; linewidth = 1.5; end
 if nargin < 4; color = 'b'; end % default color is blue
 %% Plot and fill
-linehandle = plot(X, avg, color, 'LineWidth', linewidth); hold on;
-e_handle = errorbar(X_bar, Y_bar, Error_bar);  
-set(gca,'XScale','log');
+linehandle = plot(X, avg, color, 'LineWidth', linewidth); hold on
+e_handle = errorbar(X_bar, Y_bar, Error_bar);
 
 e_handle.Marker = 'x';
 e_handle.MarkerSize = 5;

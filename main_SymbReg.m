@@ -11,7 +11,7 @@ p_c = 0.95;
 p_m = 0.1;
 n_crossover = 2;
 n_mutation = 1;
-n_eval = 1e3;
+n_eval = 2e5;
 n_elite = 1;
 trunc_rate = 1;
 
@@ -151,6 +151,7 @@ SEM_GP_RMHC = std(GP_RMHC_fittess_hist)/sqrt(size(GP_RMHC_fittess_hist, 1));
 % save('Results\avg_GP_RMHC.mat','avg_GP_RMHC');
 % save('Results\SEM_GP_RMHC.mat','SEM_GP_RMHC');
 %% Plot Learning Curves
+
 figure;
 [p_RS, f_RS] = plotAvgSemiLogYWithErrorBar(avg_GP_RS, SEM_GP_RS, bar_freq, 'k', 1.5); hold on;
 [p_RMHC, f_RMHC] = plotAvgSemiLogYWithErrorBar(avg_GP_RMHC, SEM_GP_RMHC, bar_freq, 'm', 1.5); hold on;
